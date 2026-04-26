@@ -14,7 +14,7 @@ struct TabBarView: View {
                     Label("Feed", systemImage: "house")
                 }
 
-            PlaceholderView(title: "Find")
+            FindView()
                 .tabItem {
                     Label("Find", systemImage: "magnifyingglass")
                 }
