@@ -192,10 +192,10 @@ struct FeedCardView: View {
 
             HStack(alignment: .bottom, spacing: 0) {
                 outfitContent
-                    .frame(width: 280, height: 560, alignment: .bottomLeading)
+                    .frame(width: 280, height: 640, alignment: .bottomLeading)
 
                 actionSidebar
-                    .frame(width: 80, height: 560)
+                    .frame(width: 80, height: 640)
             }
 
             stampOverlay
@@ -209,7 +209,7 @@ struct FeedCardView: View {
                 .padding(.top, 60)
             }
         }
-        .frame(width: 360, height: 560)   // 🔥 hard lock
+        .frame(width: 360, height: 640)   // 🔥 hard lock
         .clipped()                        // 🔥 nothing escapes
         .offset(x: stampDirection != 0 ? 0 : dragX)
         .rotationEffect(.degrees(stampDirection != 0 ? 0 : Double(dragX / 30)))
@@ -241,8 +241,10 @@ struct FeedCardView: View {
 
     private var outfitContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Spacer()
+            Spacer(minLength: 40)
             itemsGrid
+                .scaleEffect(0.95)
+            Spacer(minLength: 40)
 
             VStack(alignment: .leading, spacing: 6) {
                 profileRow
@@ -265,8 +267,9 @@ struct FeedCardView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 20)
+            .padding(.top, 20)
         }
-        .frame(width: 280, height: 560, alignment: .bottomLeading)
+        .frame(width: 280, height: 640, alignment: .bottomLeading)
     }
 
     private var itemsGrid: some View {

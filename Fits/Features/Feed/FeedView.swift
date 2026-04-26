@@ -59,7 +59,7 @@ struct FeedView: View {
                         )
                         .id(outfit.id)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 560)
+                        .frame(height: 640)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
 
@@ -110,7 +110,7 @@ struct FeedView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 560)
+        .frame(height: 640)
     }
 
     // MARK: - Empty state
