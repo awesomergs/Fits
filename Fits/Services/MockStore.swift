@@ -7,10 +7,6 @@ import Foundation
 import Observation
 import UIKit
 
-// Replaces SupabaseService during the mock phase.
-// All state is in-memory; mutations are immediate.
-// When wiring Supabase, replace each method body — callers stay the same.
-
 @Observable
 final class MockStore {
     static let shared = MockStore()
@@ -19,181 +15,123 @@ final class MockStore {
     private(set) var items: [ClothingItem] = []
     private(set) var outfits: [Outfit] = []
     private(set) var followedIds: Set<UUID> = []
-    private(set) var reactedOutfitIds: Set<UUID> = []   // liked or disliked
+    private(set) var reactedOutfitIds: Set<UUID> = []
     private(set) var stolenOutfitIds: Set<UUID> = []
-    // Keyed by ClothingItem.id — holds locally tagged images that have no network URL yet
     private(set) var imageCache: [UUID: UIImage] = [:]
 
     private(set) var currentUser: Profile
 
     private init() {
-        // ── Profiles ──────────────────────────────────────────────────────────
+
+        // MARK: - Profiles
+
         let me = Profile(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
             username: "You",
             handle: "you",
             avatarUrl: "https://i.pravatar.cc/150?img=1"
         )
-        let aria = Profile(
-            id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
-            username: "Aria Chen",
-            handle: "aria",
-            avatarUrl: "https://i.pravatar.cc/150?img=47",
-            bio: "streetwear always",
-            createdAt: .distantPast
-        )
-        let kai = Profile(
-            id: UUID(uuidString: "00000000-0000-0000-0000-000000000003")!,
-            username: "Kai Rivera",
-            handle: "kai",
-            avatarUrl: "https://i.pravatar.cc/150?img=68",
-            bio: "minimal · clean · quiet",
-            createdAt: .distantPast
-        )
-        let jules = Profile(
-            id: UUID(uuidString: "00000000-0000-0000-0000-000000000004")!,
-            username: "Jules Moreau",
-            handle: "jules",
-            avatarUrl: "https://i.pravatar.cc/150?img=25",
-            bio: "bold or nothing",
-            createdAt: .distantPast
-        )
+
+        let aria = Profile(id: UUID(), username: "Aria Chen", handle: "aria", avatarUrl: "https://i.pravatar.cc/150?img=47", bio: "streetwear always")
+        let kai = Profile(id: UUID(), username: "Kai Rivera", handle: "kai", avatarUrl: "https://i.pravatar.cc/150?img=68", bio: "minimal · clean")
+        let jules = Profile(id: UUID(), username: "Jules Moreau", handle: "jules", avatarUrl: "https://i.pravatar.cc/150?img=25", bio: "bold or nothing")
+        let lena = Profile(id: UUID(), username: "Lena Park", handle: "lena", avatarUrl: "https://i.pravatar.cc/150?img=12", bio: "soft neutrals")
+        let marcus = Profile(id: UUID(), username: "Marcus Lee", handle: "marcus", avatarUrl: "https://i.pravatar.cc/150?img=33", bio: "techwear")
+        let ivy = Profile(id: UUID(), username: "Ivy Stone", handle: "ivy", avatarUrl: "https://i.pravatar.cc/150?img=15", bio: "thrift queen")
 
         currentUser = me
-        profiles = [me, aria, kai, jules]
+        profiles = [me, aria, kai, jules, lena, marcus, ivy]
 
-        // ── Aria's items (streetwear) ─────────────────────────────────────────
-        let ariaTop = ClothingItem(
-            id: UUID(uuidString: "A1000000-0000-0000-0000-000000000001")!,
-            ownerId: aria.id,
-            imageUrl: "https://picsum.photos/seed/aria-top/300/400",
-            category: .top
-        )
-        let ariaBottom = ClothingItem(
-            id: UUID(uuidString: "A1000000-0000-0000-0000-000000000002")!,
-            ownerId: aria.id,
-            imageUrl: "https://picsum.photos/seed/aria-bottom/300/400",
-            category: .bottom
-        )
-        let ariaOuter = ClothingItem(
-            id: UUID(uuidString: "A1000000-0000-0000-0000-000000000003")!,
-            ownerId: aria.id,
-            imageUrl: "https://picsum.photos/seed/aria-outer/300/400",
-            category: .outerwear
-        )
-        let ariaShoes = ClothingItem(
-            id: UUID(uuidString: "A1000000-0000-0000-0000-000000000004")!,
-            ownerId: aria.id,
-            imageUrl: "https://picsum.photos/seed/aria-shoes/300/400",
-            category: .shoes
-        )
-        let ariaAcc = ClothingItem(
-            id: UUID(uuidString: "A1000000-0000-0000-0000-000000000005")!,
-            ownerId: aria.id,
-            imageUrl: "https://picsum.photos/seed/aria-acc/300/400",
-            category: .accessory,
-            isWishlist: true
-        )
+        // MARK: - Item helper
 
-        // ── Kai's items (minimal) ─────────────────────────────────────────────
-        let kaiTop = ClothingItem(
-            id: UUID(uuidString: "B1000000-0000-0000-0000-000000000001")!,
-            ownerId: kai.id,
-            imageUrl: "https://picsum.photos/seed/kai-top/300/400",
-            category: .top
-        )
-        let kaiBottom = ClothingItem(
-            id: UUID(uuidString: "B1000000-0000-0000-0000-000000000002")!,
-            ownerId: kai.id,
-            imageUrl: "https://picsum.photos/seed/kai-bottom/300/400",
-            category: .bottom
-        )
-        let kaiOuter = ClothingItem(
-            id: UUID(uuidString: "B1000000-0000-0000-0000-000000000003")!,
-            ownerId: kai.id,
-            imageUrl: "https://picsum.photos/seed/kai-outer/300/400",
-            category: .outerwear,
-            isWishlist: true
-        )
-        let kaiShoes = ClothingItem(
-            id: UUID(uuidString: "B1000000-0000-0000-0000-000000000004")!,
-            ownerId: kai.id,
-            imageUrl: "https://picsum.photos/seed/kai-shoes/300/400",
-            category: .shoes
-        )
+        func makeItem(owner: Profile, category: ItemCategory, seed: String, wishlist: Bool = false) -> ClothingItem {
+            ClothingItem(
+                id: UUID(),
+                ownerId: owner.id,
+                imageUrl: "https://picsum.photos/seed/\(seed)/300/400",
+                category: category,
+                isWishlist: wishlist
+            )
+        }
 
-        // ── Jules's items (statement) ─────────────────────────────────────────
-        let julesTop = ClothingItem(
-            id: UUID(uuidString: "C1000000-0000-0000-0000-000000000001")!,
-            ownerId: jules.id,
-            imageUrl: "https://picsum.photos/seed/jules-top/300/400",
-            category: .top
-        )
-        let julesBottom = ClothingItem(
-            id: UUID(uuidString: "C1000000-0000-0000-0000-000000000002")!,
-            ownerId: jules.id,
-            imageUrl: "https://picsum.photos/seed/jules-bottom/300/400",
-            category: .bottom
-        )
-        let julesShoes = ClothingItem(
-            id: UUID(uuidString: "C1000000-0000-0000-0000-000000000003")!,
-            ownerId: jules.id,
-            imageUrl: "https://picsum.photos/seed/jules-shoes/300/400",
-            category: .shoes
-        )
-        let julesOuter = ClothingItem(
-            id: UUID(uuidString: "C1000000-0000-0000-0000-000000000004")!,
-            ownerId: jules.id,
-            imageUrl: "https://picsum.photos/seed/jules-outer/300/400",
-            category: .outerwear
-        )
-        let julesAcc = ClothingItem(
-            id: UUID(uuidString: "C1000000-0000-0000-0000-000000000005")!,
-            ownerId: jules.id,
-            imageUrl: "https://picsum.photos/seed/jules-acc/300/400",
-            category: .accessory
-        )
+        // MARK: - Items
 
-        items = [
-            ariaTop, ariaBottom, ariaOuter, ariaShoes, ariaAcc,
-            kaiTop, kaiBottom, kaiOuter, kaiShoes,
-            julesTop, julesBottom, julesShoes, julesOuter, julesAcc
+        let allItems: [ClothingItem] = [
+
+            // Me
+            makeItem(owner: me, category: .top, seed: "me1"),
+            makeItem(owner: me, category: .bottom, seed: "me2"),
+            makeItem(owner: me, category: .outerwear, seed: "me3"),
+            makeItem(owner: me, category: .shoes, seed: "me4"),
+            makeItem(owner: me, category: .accessory, seed: "me5"),
+
+            // Aria
+            makeItem(owner: aria, category: .top, seed: "aria1"),
+            makeItem(owner: aria, category: .bottom, seed: "aria2"),
+            makeItem(owner: aria, category: .outerwear, seed: "aria3"),
+            makeItem(owner: aria, category: .shoes, seed: "aria4"),
+            makeItem(owner: aria, category: .accessory, seed: "aria5", wishlist: true),
+
+            // Kai
+            makeItem(owner: kai, category: .top, seed: "kai1"),
+            makeItem(owner: kai, category: .bottom, seed: "kai2"),
+            makeItem(owner: kai, category: .outerwear, seed: "kai3"),
+            makeItem(owner: kai, category: .shoes, seed: "kai4"),
+
+            // Jules
+            makeItem(owner: jules, category: .top, seed: "jules1"),
+            makeItem(owner: jules, category: .bottom, seed: "jules2"),
+            makeItem(owner: jules, category: .shoes, seed: "jules3"),
+            makeItem(owner: jules, category: .outerwear, seed: "jules4"),
+            makeItem(owner: jules, category: .accessory, seed: "jules5"),
+
+            // Lena
+            makeItem(owner: lena, category: .top, seed: "lena1"),
+            makeItem(owner: lena, category: .bottom, seed: "lena2"),
+            makeItem(owner: lena, category: .shoes, seed: "lena3"),
+
+            // Marcus
+            makeItem(owner: marcus, category: .top, seed: "marcus1"),
+            makeItem(owner: marcus, category: .bottom, seed: "marcus2"),
+            makeItem(owner: marcus, category: .outerwear, seed: "marcus3"),
+            makeItem(owner: marcus, category: .shoes, seed: "marcus4"),
+
+            // Ivy
+            makeItem(owner: ivy, category: .top, seed: "ivy1"),
+            makeItem(owner: ivy, category: .bottom, seed: "ivy2"),
+            makeItem(owner: ivy, category: .accessory, seed: "ivy3"),
         ]
 
-        // ── Seeded outfits ────────────────────────────────────────────────────
-        // outfit1 is the curated "Steal this fit" target on the Feed
-        let outfit1 = Outfit(
-            id: UUID(uuidString: "F0000000-0000-0000-0000-000000000001")!,
-            ownerId: aria.id,
-            occasion: "Streetwear",
-            itemIds: [ariaTop.id, ariaBottom.id, ariaShoes.id, ariaOuter.id],
-            caption: "weekend fit 🖤",
-            published: true,
-            createdAt: Date(timeIntervalSinceNow: -3600)
-        )
-        let outfit2 = Outfit(
-            id: UUID(uuidString: "F0000000-0000-0000-0000-000000000002")!,
-            ownerId: kai.id,
-            occasion: "Work",
-            itemIds: [kaiTop.id, kaiBottom.id, kaiShoes.id],
-            caption: "office ready",
-            published: true,
-            createdAt: Date(timeIntervalSinceNow: -7200)
-        )
-        let outfit3 = Outfit(
-            id: UUID(uuidString: "F0000000-0000-0000-0000-000000000003")!,
-            ownerId: jules.id,
-            occasion: "Date Night",
-            itemIds: [julesTop.id, julesBottom.id, julesShoes.id, julesAcc.id],
-            caption: "going out going out",
-            published: true,
-            createdAt: Date(timeIntervalSinceNow: -10800)
-        )
+        items = allItems
 
-        outfits = [outfit1, outfit2, outfit3]
+        // MARK: - Outfit helper
 
-        // ── Follows: current user follows all 3 demo accounts ────────────────
-        followedIds = [aria.id, kai.id, jules.id]
+        func makeOutfit(owner: Profile, itemPool: [ClothingItem], caption: String, occasion: String, hoursAgo: Double) -> Outfit {
+            Outfit(
+                id: UUID(),
+                ownerId: owner.id,
+                occasion: occasion,
+                itemIds: itemPool.shuffled().prefix(3).map { $0.id },
+                caption: caption,
+                published: true,
+                createdAt: Date(timeIntervalSinceNow: -hoursAgo * 3600)
+            )
+        }
+
+        // MARK: - Outfits
+
+        outfits = [
+            makeOutfit(owner: aria, itemPool: allItems, caption: "weekend fit 🖤", occasion: "Streetwear", hoursAgo: 1),
+            makeOutfit(owner: kai, itemPool: allItems, caption: "clean lines only", occasion: "Work", hoursAgo: 2),
+            makeOutfit(owner: jules, itemPool: allItems, caption: "loud energy", occasion: "Night Out", hoursAgo: 3),
+            makeOutfit(owner: lena, itemPool: allItems, caption: "soft tones", occasion: "Casual", hoursAgo: 5),
+            makeOutfit(owner: marcus, itemPool: allItems, caption: "tech mode", occasion: "City", hoursAgo: 6),
+            makeOutfit(owner: ivy, itemPool: allItems, caption: "thrifted gems", occasion: "Vintage", hoursAgo: 8)
+        ]
+
+        // MARK: - Follows
+
+        followedIds = Set(profiles.filter { $0.id != me.id }.map { $0.id })
     }
 
     // MARK: - Items
@@ -224,17 +162,16 @@ final class MockStore {
 
     // MARK: - Outfits
 
-    /// Published outfits from followed users, newest first.
     func feed(limit: Int = 20) -> [Outfit] {
         outfits
-            .filter { $0.published && followedIds.contains($0.ownerId) }
+            .filter { followedIds.contains($0.ownerId) }
             .sorted { $0.createdAt > $1.createdAt }
             .prefix(limit)
             .map { $0 }
     }
 
     func outfitsByUser(_ userId: UUID) -> [Outfit] {
-        outfits.filter { $0.ownerId == userId && $0.published }
+        outfits.filter { $0.ownerId == userId }
             .sorted { $0.createdAt > $1.createdAt }
     }
 
@@ -258,15 +195,17 @@ final class MockStore {
 
     func steal(_ outfit: Outfit) {
         guard !stolenOutfitIds.contains(outfit.id) else { return }
-        let newItems = itemsByIds(outfit.itemIds).map { source in
+
+        let newItems = itemsByIds(outfit.itemIds).map {
             ClothingItem(
                 ownerId: currentUser.id,
-                imageUrl: source.imageUrl,
-                category: source.category,
+                imageUrl: $0.imageUrl,
+                category: $0.category,
                 isWishlist: true,
-                sourceItemId: source.id
+                sourceItemId: $0.id
             )
         }
+
         batchAddItems(newItems)
         stolenOutfitIds.insert(outfit.id)
     }
@@ -280,8 +219,8 @@ final class MockStore {
     func searchProfiles(_ query: String) -> [Profile] {
         let q = query.lowercased()
         return profiles.filter {
-            $0.handle.localizedCaseInsensitiveContains(q) ||
-            $0.username.localizedCaseInsensitiveContains(q)
+            $0.username.lowercased().contains(q) ||
+            $0.handle.lowercased().contains(q)
         }
     }
 

@@ -19,8 +19,7 @@ final class TagModel {
 
     var canSave: Bool { pickedImage != nil && selectedCategory != nil && !isSaving }
 
-    private let supabase = SupabaseService.shared
-    private let imageUpload = ImageUploadService.shared
+    private let mockStore = MockStore.shared
 
     func load(from item: PhotosPickerItem?) async {
         guard let item else { return }
@@ -44,8 +43,7 @@ final class TagModel {
 
     func save() async {
         guard let image = pickedImage,
-              let category = selectedCategory,
-              let userId = supabase.currentUserId else {
+              let category = selectedCategory else {
             error = "Missing image or category"
             return
         }
@@ -53,35 +51,20 @@ final class TagModel {
         isSaving = true
         error = nil
 
-        do {
-            // Convert image to PNG data
-            guard let imageData = image.pngData() else {
-                throw TagError.imageSaveFailed
-            }
+        let item = ClothingItem(
+            ownerId: mockStore.currentUser.id,
+            imageUrl: "mock://item",
+            category: category,
+            isWishlist: isWishlist
+        )
 
-            // Upload to storage
-            let imageUrl = try await imageUpload.uploadItemImage(imageData)
+        mockStore.addItem(item, image: image)
 
-            // Create item in database
-            let item = ClothingItem(
-                ownerId: userId,
-                imageUrl: imageUrl,
-                category: category,
-                isWishlist: isWishlist
-            )
-
-            try await supabase.createItem(item)
-
-            isSaving = false
-            showSuccessToast = true
-            try? await Task.sleep(for: .seconds(2))
-            showSuccessToast = false
-            reset()
-        } catch {
-            print("Save failed: \(error)")
-            self.error = error.localizedDescription
-            isSaving = false
-        }
+        isSaving = false
+        showSuccessToast = true
+        try? await Task.sleep(for: .seconds(2))
+        showSuccessToast = false
+        reset()
     }
 
     func reset() {

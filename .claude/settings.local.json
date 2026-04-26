@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(xcodebuild -scheme Fits -destination \"generic/platform=iOS\" build)",
-      "Bash(xcodebuild -scheme Fits -destination \"generic/platform=iOS\" CODE_SIGNING_ALLOWED=NO build)"
+      "Bash(xcodebuild -scheme Fits -destination \"generic/platform=iOS\" CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(swift build *)",
+      "Bash(xcodebuild -scheme Fits -showBuildSettings)",
+      "Bash(xcodebuild -scheme Fits -destination 'generic/platform=iOS')",
+      "Bash(swiftc -typecheck Fits/Services/MockStore.swift -I Fits/Models)"
     ]
   }
 }

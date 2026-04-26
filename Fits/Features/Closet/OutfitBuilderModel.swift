@@ -17,7 +17,7 @@ final class OutfitBuilderModel {
 
     let occasions = ["Casual", "Streetwear", "Work", "Date Night", "Gala"]
 
-    private let supabase = SupabaseService.shared
+    private let mockStore = MockStore.shared
 
     var availableCategories: [ItemCategory] {
         ItemCategory.allCases.filter { !items(for: $0).isEmpty }
@@ -25,41 +25,28 @@ final class OutfitBuilderModel {
 
     var canPublish: Bool { !picks.isEmpty && !isPublishing }
 
-    func load() async {
-        do {
-            allItems = try await supabase.myItems(wishlist: false)
-        } catch {
-            print("OutfitBuilder load failed: \(error)")
-            self.error = error.localizedDescription
-        }
+    func load() {
+        allItems = mockStore.myItems(wishlist: false)
     }
 
     func items(for category: ItemCategory) -> [ClothingItem] {
         allItems.filter { $0.category == category }
     }
 
-    func publish() async {
-        guard canPublish, let userId = supabase.currentUserId else { return }
+    func publish() {
+        guard canPublish else { return }
         isPublishing = true
         error = nil
 
         let outfit = Outfit(
-            ownerId: userId,
+            ownerId: mockStore.currentUser.id,
             occasion: selectedOccasion,
-            itemIds: picks.values.map(\.id),
+            itemIds: picks.values.map { $0.id },
             published: true
         )
 
-        do {
-            try await supabase.publishOutfit(outfit)
-            isPublishing = false
-            showSuccessToast = true
-            try? await Task.sleep(for: .seconds(1.5))
-            showSuccessToast = false
-        } catch {
-            print("Publish failed: \(error)")
-            self.error = error.localizedDescription
-            isPublishing = false
-        }
+        mockStore.publishOutfit(outfit)
+        isPublishing = false
+        showSuccessToast = true
     }
 }

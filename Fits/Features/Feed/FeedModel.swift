@@ -14,32 +14,26 @@ final class FeedModel {
     var isLoading = false
     var error: String?
 
-    private let supabase = SupabaseService.shared
+    private let mockStore = MockStore.shared
 
-    func load() async {
+    func load() {
         isLoading = true
         error = nil
 
-        do {
-            let outfits = try await supabase.feed(limit: 20)
-            self.deck = outfits
+        let outfits = mockStore.feed(limit: 20)
+        self.deck = outfits
 
-            for outfit in outfits {
-                let items = try await supabase.itemsByIds(outfit.itemIds)
-                itemsByOutfit[outfit.id] = items
+        for outfit in outfits {
+            let items = mockStore.itemsByIds(outfit.itemIds)
+            itemsByOutfit[outfit.id] = items
 
-                if profilesByUser[outfit.ownerId] == nil {
-                    let profile = try await supabase.profile(for: outfit.ownerId)
-                    profilesByUser[outfit.ownerId] = profile
-                }
+            if profilesByUser[outfit.ownerId] == nil {
+                let profile = mockStore.profile(for: outfit.ownerId)
+                profilesByUser[outfit.ownerId] = profile
             }
-
-            isLoading = false
-        } catch {
-            print("Feed load failed: \(error)")
-            self.error = error.localizedDescription
-            isLoading = false
         }
+
+        isLoading = false
     }
 
     func items(for outfit: Outfit) -> [ClothingItem] {
@@ -50,30 +44,20 @@ final class FeedModel {
         profilesByUser[outfit.ownerId]
     }
 
-    func react(to outfit: Outfit, kind: ReactionKind) async {
+    func react(to outfit: Outfit, kind: ReactionKind) {
         deck.removeAll { $0.id == outfit.id }
-        do {
-            try await supabase.react(targetType: "outfit", targetId: outfit.id, kind: kind)
-        } catch {
-            print("React failed: \(error)")
-            self.error = error.localizedDescription
-            deck.insert(outfit, at: 0)
-        }
+        mockStore.react(to: outfit.id, kind: kind)
     }
 
-    func steal(_ outfit: Outfit) async {
-        do {
-            let sourceItems = items(for: outfit)
-            try await supabase.stealOutfit(outfit, sourceItems: sourceItems)
-        } catch {
-            print("Steal failed: \(error)")
-            self.error = error.localizedDescription
-        }
+    func steal(_ outfit: Outfit) {
+        mockStore.steal(outfit)
     }
 
     func hasReacted(to outfit: Outfit) -> Bool {
-        reactedOutfitIds.contains(outfit.id)
+        mockStore.hasReacted(to: outfit.id)
     }
 
-    var reactedOutfitIds: Set<UUID> = []
+    var reactedOutfitIds: Set<UUID> {
+        mockStore.reactedOutfitIds
+    }
 }

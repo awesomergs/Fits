@@ -15,39 +15,31 @@ final class ProfileModel {
     var isLoading = false
     var error: String?
 
-    private let supabase = SupabaseService.shared
+    private let mockStore = MockStore.shared
 
     init(userId: UUID? = nil) {
         if let userId = userId {
             self.userId = userId
         } else {
-            self.userId = supabase.currentUserId ?? UUID()
+            self.userId = mockStore.currentUser.id
         }
     }
 
     var isCurrentUser: Bool {
-        userId == supabase.currentUserId
+        userId == mockStore.currentUser.id
     }
 
-    func load() async {
+    func load() {
         isLoading = true
         error = nil
 
-        do {
-            profile = try await supabase.profile(for: userId)
-            let allOutfits = try await supabase.outfitsByUser(userId)
-            outfits = allOutfits.filter { $0.published || $0.ownerId == supabase.currentUserId }
+        profile = mockStore.profile(for: userId)
+        let allOutfits = mockStore.outfitsByUser(userId)
+        outfits = allOutfits.filter { $0.published || $0.ownerId == mockStore.currentUser.id }
 
-            let items = try await supabase.itemsForUser(userId)
-            recentItems = Array(
-                items.sorted { $0.createdAt > $1.createdAt }.prefix(12)
-            )
+        let items = mockStore.itemsForUser(userId)
+        recentItems = Array(items.sorted { $0.createdAt > $1.createdAt }.prefix(12))
 
-            isLoading = false
-        } catch {
-            print("Failed to load profile: \(error)")
-            self.error = error.localizedDescription
-            isLoading = false
-        }
+        isLoading = false
     }
 }
