@@ -65,45 +65,44 @@ struct TagView: View {
     @ViewBuilder
     private var imageArea: some View {
         ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(FitsTheme.muted.opacity(0.3))
+                .frame(width: 260, height: 360)
+
             if let image = model.pickedImage {
-                // Has image — tap to re-pick from library
                 PhotosPicker(selection: $pickerItem, matching: .images) {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
+                        .frame(width: 260, height: 360)
+                        .background(FitsTheme.muted.opacity(0.3))
                         .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .aspectRatio(3/4, contentMode: .fit)
                 }
                 .buttonStyle(.plain)
+            } else if model.isLoadingImage {
+                ProgressView().tint(FitsTheme.primary)
+                    .frame(width: 260, height: 360)
             } else {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(FitsTheme.muted.opacity(0.5))
-                    .aspectRatio(3/4, contentMode: .fit)
-                    .overlay {
-                        if model.isLoadingImage {
-                            ProgressView().tint(FitsTheme.primary)
-                        } else {
-                            HStack(spacing: 24) {
-                                PhotosPicker(selection: $pickerItem, matching: .images) {
-                                    sourceOption(icon: "photo.on.rectangle", label: "Library")
-                                }
-                                .buttonStyle(.plain)
-
-                                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                                    Button { showCamera = true } label: {
-                                        sourceOption(icon: "camera.fill", label: "Camera")
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
+                HStack(spacing: 24) {
+                    PhotosPicker(selection: $pickerItem, matching: .images) {
+                        sourceOption(icon: "photo.on.rectangle", label: "Library")
                     }
+                    .buttonStyle(.plain)
+
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button { showCamera = true } label: {
+                            sourceOption(icon: "camera.fill", label: "Camera")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(width: 260, height: 360)
             }
 
             if model.isProcessingCutout {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.black.opacity(0.4))
-                    .aspectRatio(3/4, contentMode: .fit)
+                    .frame(width: 260, height: 360)
                     .overlay {
                         VStack(spacing: 10) {
                             ProgressView().tint(.white)
@@ -115,14 +114,11 @@ struct TagView: View {
                     .allowsHitTesting(false)
             }
         }
+        .frame(width: 260, height: 360)
         .sheet(isPresented: $showCamera) {
             CameraPickerView { image in
-                DispatchQueue.main.async {
-                    showCamera = false
-                }
-                Task {
-                    await model.load(from: image)
-                }
+                DispatchQueue.main.async { showCamera = false }
+                Task { await model.load(from: image) }
             }
             .ignoresSafeArea()
         }

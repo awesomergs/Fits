@@ -48,29 +48,31 @@ struct ClosetAvatarView: View {
                         mannequin
                             .padding(.horizontal, 24)
 
-                        let score = hotScore
+                        if !picks.isEmpty {
+                            let score = hotScore
 
-                        ZStack {
-                            HStack(spacing: 6) {
-                                Image(systemName: score >= 50 ? "flame.fill" : "trash.fill")
-                                    .font(.system(size: 18, weight: .bold))
+                            ZStack {
+                                HStack(spacing: 6) {
+                                    Image(systemName: score >= 50 ? "flame.fill" : "trash.fill")
+                                        .font(.system(size: 18, weight: .bold))
 
-                                Text("\(score)%")
-                                    .font(.system(size: 22, weight: .black))
+                                    Text("\(score)%")
+                                        .font(.system(size: 22, weight: .black))
+                                }
+                                .foregroundStyle(score >= 50 ? Color.orange : Color.black)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(score >= 50 ? Color.orange : Color.black, lineWidth: 2)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .rotationEffect(.degrees(score >= 50 ? 8 : -8))
                             }
-                            .foregroundStyle(score >= 50 ? Color.orange : Color.black)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(score >= 50 ? Color.orange : Color.black, lineWidth: 2)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .rotationEffect(.degrees(score >= 50 ? 8 : -8))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                            .padding(.top, 20)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(.top, 20)
                     }
 
                     categoryTray
@@ -263,7 +265,7 @@ struct ClosetAvatarView: View {
 // MARK: - Hot score
 
 private func computeHotScore(items: [ClothingItem]) -> Int {
-    guard !items.isEmpty else { return Int.random(in: 0...100) }
+    guard !items.isEmpty else { return 0 }
 
     var score = 0
 
@@ -276,8 +278,11 @@ private func computeHotScore(items: [ClothingItem]) -> Int {
         return name.components(separatedBy: "_").filter { !$0.isEmpty }
     }
 
-    // If any item had no parseable name, return fully random
-    guard parts.count == items.count else { return Int.random(in: 0...100) }
+    // If names aren't parseable use a stable hash of item IDs rather than random
+    guard parts.count == items.count else {
+        let hash = items.reduce(0) { $0 ^ $1.id.hashValue }
+        return abs(hash) % 101
+    }
 
     let allTokens = parts.flatMap { $0 }
 
@@ -296,9 +301,6 @@ private func computeHotScore(items: [ClothingItem]) -> Int {
     let topStyles: Set<String> = ["tshirt", "polo", "button-up", "buttonup", "crewneck", "henley", "boatneck"]
     let matchingStyles = allTokens.filter { topStyles.contains($0.lowercased()) }
     if matchingStyles.count >= 1 { score += 15 }
-
-    // +0–20 random flair
-    score += Int.random(in: 0...20)
 
     return min(max(score, 0), 100)
 }
@@ -368,7 +370,7 @@ struct CategoryPickerSheet: View {
                             .background(Color.gray.opacity(0.2))
                     }
 
-                    ForEach(items) { item in
+                    ForEach(Array(items.dropFirst())) { item in
                         Button {
                             onPick(item)
                         } label: {

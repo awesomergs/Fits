@@ -12,14 +12,24 @@ enum BackgroundRemovalService {
 
     /// Returns a clothes-only cutout, or the original image on any failure. tldr runs bg removal; whitening human skin; then bg remove to get rid of that
     static func cutout(from image: UIImage) async -> UIImage {
+        let normalized = normalizeOrientation(image)
         // Pass 1: VisionKit foreground extraction + skin removal
-        guard let fgCutout = try? performForegroundCutout(image) else { return image }
+        guard let fgCutout = try? performForegroundCutout(normalized) else { return normalized }
         let afterSkin = removeSkinTones(from: fgCutout) ?? fgCutout
 
         // Pass 2: re-run VisionKit on the already-processed output to clear any
         // residual white/gray artifacts left behind where body parts were removed
         let final = (try? performForegroundCutout(afterSkin)) ?? afterSkin
         return final
+    }
+
+    // Redraws image into a fresh context so CGImage access always sees .up orientation.
+    // Camera photos are typically .right (sensor mounted sideways) — without this,
+    // VisionKit and CGContext operations run on the raw rotated pixel buffer.
+    private static func normalizeOrientation(_ image: UIImage) -> UIImage {
+        guard image.imageOrientation != .up else { return image }
+        let renderer = UIGraphicsImageRenderer(size: image.size)
+        return renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: image.size)) }
     }
 
     // MARK: - Step 1: VisionKit foreground extraction
