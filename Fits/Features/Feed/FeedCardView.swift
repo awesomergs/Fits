@@ -183,6 +183,7 @@ struct FeedCardView: View {
     @State private var isStolen: Bool = false
     @State private var stealToastMessage: String? = nil
     @State private var showComments = false
+    @State private var showProfileSheet = false
 
     private let threshold: CGFloat = 90
 
@@ -217,6 +218,11 @@ struct FeedCardView: View {
         .gesture(horizontalSwipeGesture)
         .sheet(isPresented: $showComments) {
             CommentsSheet(comments: comments(for: outfit))
+        }
+        .sheet(isPresented: $showProfileSheet) {
+            if let profile {
+                MiniProfileView(profile: profile)
+            }
         }
     }
 
@@ -343,15 +349,19 @@ struct FeedCardView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            AsyncImage(url: profile?.avatarUrl.flatMap(URL.init)) { phase in
-                switch phase {
-                case .success(let img): img.resizable().scaledToFill()
-                default: Circle().fill(.white.opacity(0.3))
+            Button { showProfileSheet = true } label: {
+                AsyncImage(url: profile?.avatarUrl.flatMap(URL.init)) { phase in
+                    switch phase {
+                    case .success(let img): img.resizable().scaledToFill()
+                    default: Circle().fill(.white.opacity(0.3))
+                    }
                 }
+                .frame(width: 48, height: 48)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
             }
-            .frame(width: 48, height: 48)
-            .clipShape(Circle())
-            .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+            .buttonStyle(.plain)
+            .disabled(profile == nil)
 
             hotnessIndicator
 
