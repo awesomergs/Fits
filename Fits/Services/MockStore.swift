@@ -208,6 +208,17 @@ final class MockStore {
         }
 
         batchAddItems(newItems)
+
+        let savedOutfit = Outfit(
+            ownerId: currentUser.id,
+            occasion: outfit.occasion,
+            itemIds: newItems.map { $0.id },
+            caption: outfit.caption,
+            published: true,
+            hotness: outfit.hotness
+        )
+        publishOutfit(savedOutfit)
+
         stolenOutfitIds.insert(outfit.id)
     }
 
