@@ -21,6 +21,15 @@ final class TagModel {
 
     private let mockStore = MockStore.shared
 
+    func load(from image: UIImage) async {
+        isProcessingCutout = true
+        let result = await BackgroundRemovalService.cutout(from: image)
+        await MainActor.run {
+            self.pickedImage = result
+        }
+        isProcessingCutout = false
+    }
+
     func load(from item: PhotosPickerItem?) async {
         guard let item else { return }
 
@@ -35,9 +44,10 @@ final class TagModel {
         isLoadingImage = false
 
         isProcessingCutout = true
-        pickedImage = await Task.detached(priority: .userInitiated) {
-            await BackgroundRemovalService.cutout(from: raw)
-        }.value
+        let result = await BackgroundRemovalService.cutout(from: raw)
+        await MainActor.run {
+            self.pickedImage = result
+        }
         isProcessingCutout = false
     }
 

@@ -58,13 +58,13 @@ struct ClosetAvatarView: View {
                                 Text("\(score)%")
                                     .font(.system(size: 22, weight: .black))
                             }
-                            .foregroundStyle(score >= 50 ? Color.orange : Color.gray)
+                            .foregroundStyle(score >= 50 ? Color.orange : Color.black)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background(.ultraThinMaterial)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(score >= 50 ? Color.orange : Color.gray, lineWidth: 2)
+                                    .stroke(score >= 50 ? Color.orange : Color.black, lineWidth: 2)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .rotationEffect(.degrees(score >= 50 ? 8 : -8))

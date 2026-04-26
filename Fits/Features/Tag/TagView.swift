@@ -5,10 +5,12 @@
 
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct TagView: View {
     @State private var model = TagModel()
     @State private var pickerItem: PhotosPickerItem?
+    @State private var showCamera = false
 
     var body: some View {
         NavigationStack {
@@ -63,33 +65,40 @@ struct TagView: View {
     @ViewBuilder
     private var imageArea: some View {
         ZStack {
-            PhotosPicker(selection: $pickerItem, matching: .images) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(FitsTheme.muted.opacity(0.5))
+            if let image = model.pickedImage {
+                // Has image — tap to re-pick from library
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .aspectRatio(3/4, contentMode: .fit)
+                }
+                .buttonStyle(.plain)
+            } else {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(FitsTheme.muted.opacity(0.5))
+                    .aspectRatio(3/4, contentMode: .fit)
+                    .overlay {
+                        if model.isLoadingImage {
+                            ProgressView().tint(FitsTheme.primary)
+                        } else {
+                            HStack(spacing: 24) {
+                                PhotosPicker(selection: $pickerItem, matching: .images) {
+                                    sourceOption(icon: "photo.on.rectangle", label: "Library")
+                                }
+                                .buttonStyle(.plain)
 
-                    if model.isLoadingImage {
-                        ProgressView()
-                            .tint(FitsTheme.primary)
-                    } else if let image = model.pickedImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
-                    } else {
-                        VStack(spacing: 12) {
-                            Image(systemName: "plus.circle")
-                                .font(.system(size: 52, weight: .light))
-                                .foregroundStyle(FitsTheme.primary)
-                            Text("Tap to pick a photo")
-                                .font(.fitsCaption)
-                                .foregroundStyle(FitsTheme.primary.opacity(0.7))
+                                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                                    Button { showCamera = true } label: {
+                                        sourceOption(icon: "camera.fill", label: "Camera")
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                         }
                     }
-                }
-                .aspectRatio(3/4, contentMode: .fit)
             }
-            .buttonStyle(.plain)
 
             if model.isProcessingCutout {
                 RoundedRectangle(cornerRadius: 20)
@@ -105,6 +114,28 @@ struct TagView: View {
                     }
                     .allowsHitTesting(false)
             }
+        }
+        .sheet(isPresented: $showCamera) {
+            CameraPickerView { image in
+                DispatchQueue.main.async {
+                    showCamera = false
+                }
+                Task {
+                    await model.load(from: image)
+                }
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    private func sourceOption(icon: String, label: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(FitsTheme.primary)
+            Text(label)
+                .font(.fitsCaption)
+                .foregroundStyle(FitsTheme.primary.opacity(0.7))
         }
     }
 
@@ -180,6 +211,39 @@ struct TagView: View {
         .disabled(!model.canSave)
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.canSave)
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.isSaving)
+    }
+}
+
+// MARK: - Camera picker
+
+struct CameraPickerView: UIViewControllerRepresentable {
+    let onImage: (UIImage) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onImage: onImage) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImage: (UIImage) -> Void
+        init(onImage: @escaping (UIImage) -> Void) { self.onImage = onImage }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
+                onImage(image)
+            }
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
     }
 }
 
