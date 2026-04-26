@@ -10,13 +10,16 @@ import CoreImage
 @available(iOS 17, *)
 enum BackgroundRemovalService {
 
-    /// Returns a clothes-only cutout, or the original image on any failure.
-    /// Never throws — the Tag flow must never be blocked by this step.
+    /// Returns a clothes-only cutout, or the original image on any failure. tldr runs bg removal; whitening human skin; then bg remove to get rid of that
     static func cutout(from image: UIImage) async -> UIImage {
-        // Step 1: remove background with VisionKit
+        // Pass 1: VisionKit foreground extraction + skin removal
         guard let fgCutout = try? performForegroundCutout(image) else { return image }
-        // Step 2: remove exposed skin, leaving clothing
-        return removeSkinTones(from: fgCutout) ?? fgCutout
+        let afterSkin = removeSkinTones(from: fgCutout) ?? fgCutout
+
+        // Pass 2: re-run VisionKit on the already-processed output to clear any
+        // residual white/gray artifacts left behind where body parts were removed
+        let final = (try? performForegroundCutout(afterSkin)) ?? afterSkin
+        return final
     }
 
     // MARK: - Step 1: VisionKit foreground extraction
