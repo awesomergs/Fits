@@ -16,7 +16,7 @@ struct FeedComment: Identifiable {
     let text: String
 }
 
-private let commentBank: [FeedComment] = [
+private let positiveComments: [FeedComment] = [
     FeedComment(username: "Maya Patel",      handle: "mayap",        text: "obsessed with this whole look 🔥"),
     FeedComment(username: "Jordan Lee",      handle: "jlee",         text: "where is that jacket from??"),
     FeedComment(username: "Sofia Rivera",    handle: "sofrivera",    text: "the color combo is so good"),
@@ -28,7 +28,6 @@ private let commentBank: [FeedComment] = [
     FeedComment(username: "Zoe Nguyen",      handle: "zoeng",        text: "the layering here is chef's kiss"),
     FeedComment(username: "Marcus Reid",     handle: "marcusreid",   text: "need a full breakdown of every item"),
     FeedComment(username: "Isla Foster",     handle: "islaf",        text: "this went so hard omg"),
-    FeedComment(username: "Dev Sharma",      handle: "devsharma",    text: "bro dropped the fit and dipped"),
     FeedComment(username: "Camille Dupont",  handle: "camilled",     text: "très chic honestly"),
     FeedComment(username: "Ryo Tanaka",      handle: "ryotan",       text: "the shoes carry this fit fr"),
     FeedComment(username: "Amara Osei",      handle: "amaraosei",    text: "not me screenshotting this for inspo"),
@@ -49,15 +48,10 @@ private let commentBank: [FeedComment] = [
     FeedComment(username: "Hana Suzuki",     handle: "hanasuz",      text: "the tonal look is everything rn"),
     FeedComment(username: "Chris Bell",      handle: "chrisbell",    text: "no notes, just send me your closet"),
     FeedComment(username: "Vera Novak",      handle: "veranov",      text: "this is so clean I can't"),
-    FeedComment(username: "Tobias Greer",    handle: "tobiasgreer",  text: "the fit just works, idk how to explain it"),
     FeedComment(username: "Yara Ali",        handle: "yaraali",      text: "major style goals"),
     FeedComment(username: "Jin Park",        handle: "jinpark",      text: "everything is perfectly sized"),
-    FeedComment(username: "Nadia Petrov",    handle: "nadiap",       text: "the way the colors balance tho"),
-    FeedComment(username: "Leo Moreau",      handle: "leomoreau",    text: "vintage or contemporary? can't tell and I love it"),
-    FeedComment(username: "Adele Fontaine",  handle: "adelef",       text: "the texture mixing is so intentional"),
     FeedComment(username: "Raj Mehta",       handle: "rajmehta",     text: "okay this is actually insane"),
     FeedComment(username: "Tara Walsh",      handle: "tarawalsh",    text: "this fit lives rent free in my head now"),
-    FeedComment(username: "Marco Ricci",     handle: "marcoricci",   text: "Italian summer vibes fr"),
     FeedComment(username: "Elena Vasquez",   handle: "elenav",       text: "drop the brand links PLEASE"),
     FeedComment(username: "Darius Cole",     handle: "dariuscole",   text: "the confidence to wear this, respect"),
     FeedComment(username: "Sophie Laurent",  handle: "sophiel",      text: "this is on my mood board now"),
@@ -65,69 +59,112 @@ private let commentBank: [FeedComment] = [
     FeedComment(username: "Grace Okafor",    handle: "graceokafor",  text: "this is giving exactly what it was supposed to give"),
     FeedComment(username: "Will Hartley",    handle: "willh",        text: "understated but so considered"),
     FeedComment(username: "Alinta Watson",   handle: "alintaw",      text: "the way every piece just works together"),
-    FeedComment(username: "Pierre Blanc",    handle: "pierreb",      text: "très stylé mon ami"),
     FeedComment(username: "Sana Yoshida",    handle: "sanayosh",     text: "not the fit making me rethink my entire wardrobe"),
     FeedComment(username: "Omar Farouq",     handle: "omarfarouq",   text: "W W W W W"),
-    FeedComment(username: "Cara Flynn",      handle: "caraflynn",    text: "the minimalism here is a vibe"),
     FeedComment(username: "Tariq James",     handle: "tariqj",       text: "who let you cook like this"),
     FeedComment(username: "Ines Morales",    handle: "inesm",        text: "the accessories pull the whole thing together"),
     FeedComment(username: "Blake Sutton",    handle: "blakes",       text: "this is so effortlessly put together"),
     FeedComment(username: "Leila Aziz",      handle: "leilaaziz",    text: "my pinterest board is shaking"),
-    FeedComment(username: "Hugo Lemaire",    handle: "hugol",        text: "parisian energy, love it"),
     FeedComment(username: "Tess Harrington", handle: "tessh",        text: "everything about this is right"),
     FeedComment(username: "Kofi Asante",     handle: "kofiasante",   text: "drip check: passed"),
-    FeedComment(username: "Mila Voss",       handle: "milavoss",     text: "the fit is giving what the fit is supposed to give"),
     FeedComment(username: "Jasper Reed",     handle: "jasperreed",   text: "clean, minimal, elite"),
     FeedComment(username: "Anya Petrova",    handle: "anyap",        text: "how are the fits just getting better"),
     FeedComment(username: "Diego Reyes",     handle: "diegor",       text: "stealing the whole aesthetic not just the fit"),
-    FeedComment(username: "Fiona Bell",      handle: "fionab",       text: "the jacket is doing so much heavy lifting"),
-    FeedComment(username: "Hamid Rahimi",    handle: "hamidr",       text: "subtle flex but it's a flex"),
-    FeedComment(username: "Simone Dubois",   handle: "simoned",      text: "the silhouette is *chef's kiss*"),
-    FeedComment(username: "Luca Ferrari",    handle: "lucaf",        text: "Italian dressing understood"),
     FeedComment(username: "Zara Malik",      handle: "zaramalik",    text: "I want your whole wardrobe honestly"),
     FeedComment(username: "Eli Cohen",       handle: "elicohen",     text: "this gives me hope for fashion"),
-    FeedComment(username: "Nour Hassan",     handle: "nourhassan",   text: "the neutrals are working overtime"),
     FeedComment(username: "Bea Thornton",    handle: "beathornton",  text: "studied this fit for 5 minutes, no notes"),
-    FeedComment(username: "Arthur Lebrun",   handle: "arthurl",      text: "quiet confidence personified"),
     FeedComment(username: "Yuki Hayashi",    handle: "yukihay",      text: "the fit is a whole mood"),
     FeedComment(username: "Cleo Jacobs",     handle: "cleojacobs",   text: "ok but where did you get that top"),
-    FeedComment(username: "Pita Havili",     handle: "pitah",        text: "pacific drip always hits"),
-    FeedComment(username: "Rosie Gallagher", handle: "rosieg",       text: "the vibe is immaculate as always"),
-    FeedComment(username: "Ivan Sokolov",    handle: "ivansok",      text: "eastern european cold fit energy, I respect it"),
-    FeedComment(username: "Aaliyah Moore",   handle: "aaliyahm",     text: "dropped the fit and didn't explain anything, iconic"),
-    FeedComment(username: "Phoebe Hart",     handle: "phoebehart",   text: "the monochrome is working so hard"),
-    FeedComment(username: "Soren Jensen",    handle: "sorenj",       text: "scandinavian minimalism achieved"),
-    FeedComment(username: "Miriam Okonkwo",  handle: "miriamok",     text: "the pattern mixing is so bold and I'm here for it"),
     FeedComment(username: "Callum Fraser",   handle: "callumf",      text: "just sent this to my entire group chat"),
     FeedComment(username: "Valentina Cruz",  handle: "valcruz",      text: "this is genuinely an artwork"),
-    FeedComment(username: "Olu Adeyemi",     handle: "oluadeyemi",   text: "the fit is a statement"),
     FeedComment(username: "Astrid Holm",     handle: "astridholm",   text: "clean lines, great proportions, 10/10"),
     FeedComment(username: "Theo Blackwood",  handle: "theoblack",    text: "whoever styled this understood the assignment"),
     FeedComment(username: "Remi Fontaine",   handle: "remif",        text: "the casual luxury balance is unreal"),
-    FeedComment(username: "Paloma Vega",     handle: "palomav",      text: "the accessories are the story here"),
     FeedComment(username: "Ike Obi",         handle: "ikeobi",       text: "not me buying everything in this fit"),
     FeedComment(username: "Linnea Strand",   handle: "linneas",      text: "the color palette is so cohesive"),
     FeedComment(username: "Matteo Romano",   handle: "matteor",      text: "Milano approved"),
-    FeedComment(username: "Sienna Fox",      handle: "siennafox",    text: "this popped up on my fyp and I had to comment"),
-    FeedComment(username: "Kwame Boateng",   handle: "kwameb",       text: "the fit is self-explanatory"),
     FeedComment(username: "Iris Chen",       handle: "irischen",     text: "you really said fashion is art and proved it"),
-    FeedComment(username: "Axel Brandt",     handle: "axelbrandt",   text: "German engineering but make it fashion"),
     FeedComment(username: "Celeste Noir",    handle: "celestenoir",  text: "this is the fit of the season for me"),
-    FeedComment(username: "Rowan Murphy",    handle: "rowanm",       text: "the earthy tones are giving everything"),
     FeedComment(username: "Ximena Torres",   handle: "ximenat",      text: "ok you really woke up and chose excellence"),
+    FeedComment(username: "Paloma Vega",     handle: "palomav",      text: "the accessories are the story here"),
+    FeedComment(username: "Sienna Fox",      handle: "siennafox",    text: "this popped up on my fyp and I had to comment"),
 ]
 
-private func comments(for outfitID: UUID) -> [FeedComment] {
-    let hash = abs(outfitID.hashValue)
+private let negativeComments: [FeedComment] = [
+    FeedComment(username: "Dev Sharma",      handle: "devsharma",    text: "idk about this one honestly"),
+    FeedComment(username: "Tobias Greer",    handle: "tobiasgreer",  text: "not really my style but ok"),
+    FeedComment(username: "Nadia Petrov",    handle: "nadiap",       text: "the colors are giving a lot"),
+    FeedComment(username: "Leo Moreau",      handle: "leomoreau",    text: "I think the shoes are fighting the rest of the fit"),
+    FeedComment(username: "Marco Ricci",     handle: "marcoricci",   text: "feels a bit off to me, can't explain why"),
+    FeedComment(username: "Fiona Bell",      handle: "fionab",       text: "this is giving confused energy"),
+    FeedComment(username: "Hamid Rahimi",    handle: "hamidr",       text: "the fit is okay I guess"),
+    FeedComment(username: "Simone Dubois",   handle: "simoned",      text: "I've seen this look done better tbh"),
+    FeedComment(username: "Luca Ferrari",    handle: "lucaf",        text: "not sure the pieces go together"),
+    FeedComment(username: "Nour Hassan",     handle: "nourhassan",   text: "the proportions feel a little off"),
+    FeedComment(username: "Arthur Lebrun",   handle: "arthurl",      text: "missing something, can't put my finger on it"),
+    FeedComment(username: "Pita Havili",     handle: "pitah",        text: "giving try hard energy imo"),
+    FeedComment(username: "Rosie Gallagher", handle: "rosieg",       text: "not for me personally but do you"),
+    FeedComment(username: "Ivan Sokolov",    handle: "ivansok",      text: "the jacket doesn't work with the rest"),
+    FeedComment(username: "Phoebe Hart",     handle: "phoebehart",   text: "feels like three different fits in one"),
+    FeedComment(username: "Soren Jensen",    handle: "sorenj",       text: "the color clash is a bit much"),
+    FeedComment(username: "Miriam Okonkwo",  handle: "miriamok",     text: "idk the vibe feels off today"),
+    FeedComment(username: "Olu Adeyemi",     handle: "oluadeyemi",   text: "bold choice, I'll say that"),
+    FeedComment(username: "Rowan Murphy",    handle: "rowanm",       text: "not my taste but I respect the commitment"),
+    FeedComment(username: "Axel Brandt",     handle: "axelbrandt",   text: "the fit needs editing"),
+    FeedComment(username: "Kwame Boateng",   handle: "kwameb",       text: "something about this isn't landing for me"),
+    FeedComment(username: "Pierre Blanc",    handle: "pierreb",      text: "un peu trop pour moi"),
+    FeedComment(username: "Hugo Lemaire",    handle: "hugol",        text: "the accessories are competing too much"),
+    FeedComment(username: "Aaliyah Moore",   handle: "aaliyahm",     text: "this needed one less piece"),
+    FeedComment(username: "Adele Fontaine",  handle: "adelef",       text: "the texture mixing isn't working here"),
+    FeedComment(username: "Mila Voss",       handle: "milavoss",     text: "I feel like this misses"),
+    FeedComment(username: "Cara Flynn",      handle: "caraflynn",    text: "idk the silhouette looks awkward"),
+    FeedComment(username: "Leila Aziz",      handle: "leilaaziz",    text: "the fit is giving a 5/10 from me"),
+    FeedComment(username: "Hugo Lemaire",    handle: "hugo_l",       text: "would've worked better with different shoes"),
+    FeedComment(username: "Ximena Torres",   handle: "ximena_t",     text: "trying a bit too hard with the layering"),
+]
+
+private func comments(for outfit: Outfit) -> [FeedComment] {
+    let hash = abs(outfit.id.hashValue)
     let count = 2 + (hash % 6)
-    var indices: [Int] = []
     var seed = hash
-    while indices.count < count {
+
+    func nextRand() -> Int {
         seed = seed &* 6364136223846793005 &+ 1442695040888963407
-        let idx = (seed < 0 ? -seed : seed) % commentBank.count
-        if !indices.contains(idx) { indices.append(idx) }
+        return seed < 0 ? -seed : seed
     }
-    return indices.map { commentBank[$0] }
+
+    let posTarget: Int
+    let negTarget: Int
+    if outfit.hotness >= 0.5 {
+        posTarget = max(1, Int((Double(count) * 0.8).rounded()))
+        negTarget = count - posTarget
+    } else {
+        negTarget = max(1, Int((Double(count) * 0.8).rounded()))
+        posTarget = count - negTarget
+    }
+
+    var posIndices = Set<Int>()
+    var posResult: [FeedComment] = []
+    while posResult.count < posTarget {
+        let idx = nextRand() % positiveComments.count
+        if posIndices.insert(idx).inserted { posResult.append(positiveComments[idx]) }
+    }
+
+    var negIndices = Set<Int>()
+    var negResult: [FeedComment] = []
+    while negResult.count < negTarget {
+        let idx = nextRand() % negativeComments.count
+        if negIndices.insert(idx).inserted { negResult.append(negativeComments[idx]) }
+    }
+
+    // Interleave positive and negative deterministically
+    var result: [FeedComment] = []
+    var pi = 0, ni = 0
+    while pi < posResult.count || ni < negResult.count {
+        if pi < posResult.count { result.append(posResult[pi]); pi += 1 }
+        if ni < negResult.count { result.append(negResult[ni]); ni += 1 }
+    }
+    return result
 }
 
 // MARK: - Card view
@@ -139,6 +176,7 @@ struct FeedCardView: View {
     var onLike: (() -> Void)? = nil
     var onDislike: (() -> Void)? = nil
     var onSteal: (() -> Void)? = nil
+    var onTryOn: (([ClothingItem]) -> Void)? = nil
 
     @GestureState private var dragX: CGFloat = 0
     @State private var stampDirection: CGFloat = 0   // 1 = like, -1 = dislike, 0 = none
@@ -174,7 +212,7 @@ struct FeedCardView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: stampDirection)
         .gesture(horizontalSwipeGesture)
         .sheet(isPresented: $showComments) {
-            CommentsSheet(comments: comments(for: outfit.id))
+            CommentsSheet(comments: comments(for: outfit))
         }
     }
 
@@ -275,6 +313,20 @@ struct FeedCardView: View {
         .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
     }
 
+    // MARK: - Hotness indicator
+
+    private var hotnessIndicator: some View {
+        VStack(spacing: 4) {
+            Image(systemName: outfit.hotness >= 0.5 ? "flame.fill" : "trash.fill")
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(outfit.hotness >= 0.5 ? Color.orange : Color.red)
+                .shadow(color: .black.opacity(0.4), radius: 4)
+            Text("\(Int(outfit.hotness * 100))%")
+                .font(.micro)
+                .foregroundStyle(.white.opacity(0.8))
+        }
+    }
+
     // MARK: - Action sidebar
 
     private var actionSidebar: some View {
@@ -291,9 +343,11 @@ struct FeedCardView: View {
             .clipShape(Circle())
             .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
 
+            hotnessIndicator
+
             actionButton(
                 systemImage: "bubble.left.fill",
-                label: "\(comments(for: outfit.id).count)",
+                label: "\(comments(for: outfit).count)",
                 color: .white
             ) {
                 showComments = true
@@ -308,6 +362,16 @@ struct FeedCardView: View {
                 isStolen = true
                 onSteal?()
                 showStealToast()
+            }
+
+            if isStolen {
+                actionButton(
+                    systemImage: "person.fill",
+                    label: "Try On",
+                    color: FitsTheme.accent
+                ) {
+                    onTryOn?(items)
+                }
             }
         }
         .padding(.trailing, 16)

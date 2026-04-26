@@ -106,7 +106,7 @@ final class MockStore {
 
         // MARK: - Outfit helper
 
-        func makeOutfit(owner: Profile, itemPool: [ClothingItem], caption: String, occasion: String, hoursAgo: Double) -> Outfit {
+        func makeOutfit(owner: Profile, itemPool: [ClothingItem], caption: String, occasion: String, hoursAgo: Double, hotness: Double = 0.5) -> Outfit {
             Outfit(
                 id: UUID(),
                 ownerId: owner.id,
@@ -114,19 +114,20 @@ final class MockStore {
                 itemIds: itemPool.shuffled().prefix(3).map { $0.id },
                 caption: caption,
                 published: true,
-                createdAt: Date(timeIntervalSinceNow: -hoursAgo * 3600)
+                createdAt: Date(timeIntervalSinceNow: -hoursAgo * 3600),
+                hotness: hotness
             )
         }
 
         // MARK: - Outfits
 
         outfits = [
-            makeOutfit(owner: aria, itemPool: allItems, caption: "weekend fit 🖤", occasion: "Streetwear", hoursAgo: 1),
-            makeOutfit(owner: kai, itemPool: allItems, caption: "clean lines only", occasion: "Work", hoursAgo: 2),
-            makeOutfit(owner: jules, itemPool: allItems, caption: "loud energy", occasion: "Night Out", hoursAgo: 3),
-            makeOutfit(owner: lena, itemPool: allItems, caption: "soft tones", occasion: "Casual", hoursAgo: 5),
-            makeOutfit(owner: marcus, itemPool: allItems, caption: "tech mode", occasion: "City", hoursAgo: 6),
-            makeOutfit(owner: ivy, itemPool: allItems, caption: "thrifted gems", occasion: "Vintage", hoursAgo: 8)
+            makeOutfit(owner: aria,   itemPool: allItems, caption: "weekend fit 🖤",   occasion: "Streetwear", hoursAgo: 1, hotness: 0.82),
+            makeOutfit(owner: kai,    itemPool: allItems, caption: "clean lines only", occasion: "Work",       hoursAgo: 2, hotness: 0.55),
+            makeOutfit(owner: jules,  itemPool: allItems, caption: "loud energy",      occasion: "Night Out",  hoursAgo: 3, hotness: 0.73),
+            makeOutfit(owner: lena,   itemPool: allItems, caption: "soft tones",       occasion: "Casual",     hoursAgo: 5, hotness: 0.35),
+            makeOutfit(owner: marcus, itemPool: allItems, caption: "tech mode",        occasion: "City",       hoursAgo: 6, hotness: 0.48),
+            makeOutfit(owner: ivy,    itemPool: allItems, caption: "thrifted gems",    occasion: "Vintage",    hoursAgo: 8, hotness: 0.28)
         ]
 
         // MARK: - Follows

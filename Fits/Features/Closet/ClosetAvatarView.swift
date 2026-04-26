@@ -9,12 +9,20 @@ import SwiftUI
 
 struct ClosetAvatarView: View {
     let items: [ClothingItem]
+    private let preloadedItems: [ClothingItem]
 
-    // Picks: one item per category shown on the body
-    @State private var picks: [ItemCategory: ClothingItem] = [:]
+    @State private var picks: [ItemCategory: ClothingItem]
     @State private var selectedCategory: ItemCategory? = nil
     @State private var showingPicker = false
     @State private var showEmptySlots = true
+
+    init(items: [ClothingItem], preloadedItems: [ClothingItem] = []) {
+        self.items = items
+        self.preloadedItems = preloadedItems
+        var initial: [ItemCategory: ClothingItem] = [:]
+        for item in preloadedItems { initial[item.category] = item }
+        _picks = State(initialValue: initial)
+    }
 
     private var itemsByCategory: [ItemCategory: [ClothingItem]] {
         Dictionary(grouping: items.filter { !$0.isWishlist }, by: \.category)

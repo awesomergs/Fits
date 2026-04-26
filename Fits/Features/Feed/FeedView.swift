@@ -8,6 +8,8 @@ import SwiftUI
 struct FeedView: View {
     @State private var model = FeedModel()
     private let endCardID = "feed-end"
+    @State private var tryOnItems: [ClothingItem] = []
+    @State private var showTryOn = false
 
     var body: some View {
         ZStack {
@@ -23,6 +25,9 @@ struct FeedView: View {
             }
         }
         .onAppear { model.load() }
+        .sheet(isPresented: $showTryOn) {
+            ClosetAvatarView(items: tryOnItems, preloadedItems: tryOnItems)
+        }
     }
 
     // MARK: - Scrolling feed
@@ -46,6 +51,10 @@ struct FeedView: View {
                             },
                             onSteal: {
                                 model.steal(outfit)
+                            },
+                            onTryOn: { items in
+                                tryOnItems = items
+                                showTryOn = true
                             }
                         )
                         .id(outfit.id)
