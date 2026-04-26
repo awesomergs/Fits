@@ -12,7 +12,7 @@ struct FitsApp: App {
     var body: some Scene {
         WindowGroup {
             if authService.isAuthenticated {
-                RootView()
+                TabBarView()
                     .environmentObject(authService)
             } else {
                 SignInView()
