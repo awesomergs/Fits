@@ -38,7 +38,11 @@ final class FindModel {
     // MARK: - Rails
 
     func loadRailItems(for category: ItemCategory) {
-        railItems[category] = mockStore.items.filter { $0.category == category && !$0.isWishlist }
+        var seen = Set<String>()
+
+        railItems[category] = mockStore.items
+            .filter { $0.category == category && !$0.isWishlist }
+            .filter { seen.insert($0.imageUrl).inserted }
     }
 
     func railItems(for category: ItemCategory) -> [ClothingItem] {

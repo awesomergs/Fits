@@ -112,9 +112,9 @@ struct CategoryRow: View {
                 .foregroundStyle(FitsTheme.primary)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                LazyHStack(spacing: 12) {
 
-                    ForEach(items, id: \.id) { item in
+                    ForEach(Array(items.dropFirst()), id: \.imageUrl) { item in
                         FindItemCard(item: item, model: model)
                     }
                 }

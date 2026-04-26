@@ -11,7 +11,8 @@ final class ClosetModel {
     private let mockStore = MockStore.shared
 
     var allItems: [ClothingItem] {
-        mockStore.myItems(wishlist: false)
+        var seen = Set<String>()
+        return mockStore.myItems(wishlist: false).filter { seen.insert($0.imageUrl).inserted }
     }
 
     var myOutfits: [Outfit] {
