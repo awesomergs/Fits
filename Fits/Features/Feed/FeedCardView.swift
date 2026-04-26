@@ -192,7 +192,10 @@ struct FeedCardView: View {
 
             HStack(alignment: .bottom, spacing: 0) {
                 outfitContent
+                    .frame(width: 280, height: 560, alignment: .bottomLeading)
+
                 actionSidebar
+                    .frame(width: 80, height: 560)
             }
 
             stampOverlay
@@ -204,9 +207,10 @@ struct FeedCardView: View {
                     Spacer()
                 }
                 .padding(.top, 60)
-                .animation(.spring(response: 0.3, dampingFraction: 0.75), value: stealToastMessage != nil)
             }
         }
+        .frame(width: 360, height: 560)   // 🔥 hard lock
+        .clipped()                        // 🔥 nothing escapes
         .offset(x: stampDirection != 0 ? 0 : dragX)
         .rotationEffect(.degrees(stampDirection != 0 ? 0 : Double(dragX / 30)))
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: stampDirection)
@@ -229,6 +233,8 @@ struct FeedCardView: View {
                     .clipped()
             }
         }
+        .frame(maxWidth: .infinity)
+        .clipped()
     }
 
     // MARK: - Outfit content
@@ -243,6 +249,7 @@ struct FeedCardView: View {
 
                 if let caption = outfit.caption, !caption.isEmpty {
                     Text(caption)
+                        .lineLimit(2)
                         .font(.fitsBody)
                         .foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.5), radius: 4, y: 2)
@@ -259,7 +266,7 @@ struct FeedCardView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .frame(width: 280, height: 560, alignment: .bottomLeading)
     }
 
     private var itemsGrid: some View {
@@ -416,8 +423,7 @@ struct FeedCardView: View {
             .padding(.horizontal, 12).padding(.vertical, 6)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(.red, lineWidth: 4))
             .rotationEffect(.degrees(-15))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.top, 80).padding(.leading, 20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .opacity(nopeOpacity)
 
             HStack(spacing: 6) {
@@ -430,8 +436,7 @@ struct FeedCardView: View {
             .padding(.horizontal, 12).padding(.vertical, 6)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(.orange, lineWidth: 4))
             .rotationEffect(.degrees(15))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .padding(.top, 80).padding(.trailing, 20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .opacity(likeOpacity)
         }
     }
