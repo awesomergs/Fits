@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct TabBarView: View {
     var body: some View {
@@ -18,7 +19,7 @@ struct TabBarView: View {
                     Label("Find", systemImage: "magnifyingglass")
                 }
 
-            PlaceholderView(title: "Tag")
+            TagView()
                 .tabItem {
                     Label("Tag", systemImage: "plus.circle.fill")
                 }
