@@ -52,12 +52,12 @@ struct FeedView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 560)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .padding(.horizontal, 12)
                     }
 
                     endCard.id(endCardID)
                 }
                 .scrollTargetLayout()
-                .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
             .scrollTargetBehavior(.viewAligned)
