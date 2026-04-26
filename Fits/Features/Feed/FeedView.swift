@@ -7,6 +7,7 @@ import SwiftUI
 
 struct FeedView: View {
     @State private var model = FeedModel()
+    private let endCardID = "feed-end"
 
     var body: some View {
         ZStack {
@@ -52,6 +53,8 @@ struct FeedView: View {
                         .frame(height: 560)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
+
+                    endCard.id(endCardID)
                 }
                 .scrollTargetLayout()
                 .padding(.horizontal, 16)
@@ -64,10 +67,40 @@ struct FeedView: View {
 
     private func scrollToNext(from index: Int, proxy: ScrollViewProxy) {
         let next = index + 1
-        guard next < model.deck.count else { return }
         withAnimation(.easeInOut(duration: 0.4)) {
-            proxy.scrollTo(model.deck[next].id, anchor: .top)
+            if next < model.deck.count {
+                proxy.scrollTo(model.deck[next].id, anchor: .top)
+            } else {
+                proxy.scrollTo(endCardID, anchor: .top)
+            }
         }
+    }
+
+    // MARK: - End card
+
+    private var endCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                )
+
+            VStack(spacing: 16) {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundStyle(.white.opacity(0.5))
+                Text("You're all caught up")
+                    .font(.fitsHeadline)
+                    .foregroundStyle(.white)
+                Text("You've reached the end of your feed")
+                    .font(.fitsCaption)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 560)
     }
 
     // MARK: - Empty state

@@ -255,7 +255,7 @@ struct FeedCardView: View {
     private func triggerReaction(direction: CGFloat) {
         guard stampDirection == 0 else { return }
         stampDirection = direction
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if direction > 0 { onLike?() } else { onDislike?() }
             stampDirection = 0
         }
