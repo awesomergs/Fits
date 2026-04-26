@@ -30,12 +30,8 @@ struct ToastView: View {
 
 // MARK: - Image cache
 
-private final class ImageCache {
-    static let shared = ImageCache()
-    private let cache = NSCache<NSString, UIImage>()
-    private init() { cache.countLimit = 200 }
-    func get(_ key: String) -> UIImage? { cache.object(forKey: key as NSString) }
-    func set(_ image: UIImage, for key: String) { cache.setObject(image, forKey: key as NSString) }
+final class ImageCache {
+    static let shared = NSCache<NSString, UIImage>()
 }
 
 // MARK: - Item image
@@ -44,43 +40,55 @@ struct ItemImageView: View {
     let item: ClothingItem
     var contentMode: ContentMode = .fill
 
-    @State private var uiImage: UIImage? = nil
+    @State private var image: UIImage?
 
     var body: some View {
         Group {
-            if let img = uiImage {
-                Image(uiImage: img)
+            if let image {
+                Image(uiImage: image)
                     .resizable()
                     .interpolation(.low)
                     .aspectRatio(contentMode: contentMode)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
-                placeholderRect
+                Rectangle()
+                    .fill(FitsTheme.muted.opacity(0.5))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task(id: item.id) {
-            uiImage = await Self.loadImage(for: item)
-        }
-    }
+        .onAppear {
+            if let cached = ImageCache.shared.object(forKey: item.imageUrl as NSString) {
+                image = cached
+                return
+            }
 
-    private static func loadImage(for item: ClothingItem) async -> UIImage? {
-        if let img = MockStore.shared.imageCache[item.id] { return img }
-        if item.imageUrl.hasPrefix("asset://") {
-            let name = String(item.imageUrl.dropFirst("asset://".count))
-            return UIImage(named: name)
-        }
-        if let img = ImageCache.shared.get(item.imageUrl) { return img }
-        guard let url = URL(string: item.imageUrl),
-              let (data, _) = try? await URLSession.shared.data(from: url),
-              let img = UIImage(data: data) else { return nil }
-        ImageCache.shared.set(img, for: item.imageUrl)
-        return img
-    }
+            if let cached = MockStore.shared.imageCache[item.id] {
+                ImageCache.shared.setObject(cached, forKey: item.imageUrl as NSString)
+                image = cached
+                return
+            }
 
-    private var placeholderRect: some View {
-        Rectangle().fill(FitsTheme.muted.opacity(0.5))
+            if item.imageUrl.hasPrefix("asset://") {
+                let name = String(item.imageUrl.dropFirst("asset://".count))
+                if let ui = UIImage(named: name) {
+                    ImageCache.shared.setObject(ui, forKey: item.imageUrl as NSString)
+                    image = ui
+                }
+                return
+            }
+
+            guard let url = URL(string: item.imageUrl) else { return }
+
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                if let data, let ui = UIImage(data: data) {
+                    ImageCache.shared.setObject(ui, forKey: item.imageUrl as NSString)
+                    DispatchQueue.main.async {
+                        image = ui
+                    }
+                }
+            }.resume()
+        }
     }
 }
 

@@ -138,7 +138,7 @@ struct ClosetView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(model.items(for: category)) { item in
+                    ForEach(Array(model.items(for: category).dropFirst())) { item in
                         ItemCard(item: item)
                     }
                 }
