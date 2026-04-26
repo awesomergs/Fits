@@ -9,7 +9,7 @@ import PhotosUI
 struct TabBarView: View {
     var body: some View {
         TabView {
-            PlaceholderView(title: "Feed")
+            FeedView()
                 .tabItem {
                     Label("Feed", systemImage: "house")
                 }
@@ -29,7 +29,7 @@ struct TabBarView: View {
                     Label("Closet", systemImage: "tshirt")
                 }
 
-            PlaceholderView(title: "Profile")
+            ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person")
                 }

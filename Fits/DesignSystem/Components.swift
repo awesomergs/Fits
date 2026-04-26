@@ -53,6 +53,7 @@ struct ItemImageView: View {
                     placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

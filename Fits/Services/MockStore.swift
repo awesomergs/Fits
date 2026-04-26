@@ -33,8 +33,8 @@ final class MockStore {
             username: "You",
             handle: "you",
             avatarUrl: "https://i.pravatar.cc/150?img=1",
-            bio: nil,
-            createdAt: .now
+            followerCount: 3,
+            followingCount: 3
         )
         let aria = Profile(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
@@ -42,6 +42,8 @@ final class MockStore {
             handle: "aria",
             avatarUrl: "https://i.pravatar.cc/150?img=47",
             bio: "streetwear always",
+            followerCount: 2841,
+            followingCount: 312,
             createdAt: .distantPast
         )
         let kai = Profile(
@@ -50,6 +52,8 @@ final class MockStore {
             handle: "kai",
             avatarUrl: "https://i.pravatar.cc/150?img=68",
             bio: "minimal · clean · quiet",
+            followerCount: 1504,
+            followingCount: 88,
             createdAt: .distantPast
         )
         let jules = Profile(
@@ -58,6 +62,8 @@ final class MockStore {
             handle: "jules",
             avatarUrl: "https://i.pravatar.cc/150?img=25",
             bio: "bold or nothing",
+            followerCount: 3217,
+            followingCount: 501,
             createdAt: .distantPast
         )
 
