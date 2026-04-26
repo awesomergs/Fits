@@ -44,74 +44,90 @@ final class MockStore {
 
         // MARK: - Item helper
 
-        func makeItem(owner: Profile, category: ItemCategory, seed: String, wishlist: Bool = false) -> ClothingItem {
+        func asset(_ name: String) -> String { "asset://\(name)" }
+
+        func makeItem(owner: Profile, category: ItemCategory, image: String, wishlist: Bool = false) -> ClothingItem {
             ClothingItem(
                 id: UUID(),
                 ownerId: owner.id,
-                imageUrl: "https://picsum.photos/seed/\(seed)/300/400",
+                imageUrl: image,
                 category: category,
                 isWishlist: wishlist
             )
         }
 
-        // MARK: - Items
+        // MARK: - Items (coordinated per user)
 
-        let allItems: [ClothingItem] = [
+        // Me — smart casual
+        let meTop        = makeItem(owner: me, category: .top,       image: asset("top_white-and-blue_checkered-button-up"))
+        let meBottom     = makeItem(owner: me, category: .bottom,    image: asset("bottom_jeans_trouser"))
+        let meOuter      = makeItem(owner: me, category: .outerwear, image: asset("outer_tan_jacket"))
+        let meShoes      = makeItem(owner: me, category: .shoes,     image: asset("shoes_purple_loafers"))
+        let meAcc        = makeItem(owner: me, category: .accessory, image: asset("acc_black_cap"))
 
-            // Me
-            makeItem(owner: me, category: .top, seed: "me1"),
-            makeItem(owner: me, category: .bottom, seed: "me2"),
-            makeItem(owner: me, category: .outerwear, seed: "me3"),
-            makeItem(owner: me, category: .shoes, seed: "me4"),
-            makeItem(owner: me, category: .accessory, seed: "me5"),
+        // Aria — streetwear
+        let ariaTop      = makeItem(owner: aria, category: .top,       image: asset("top_black_tshirt"))
+        let ariaBottom   = makeItem(owner: aria, category: .bottom,    image: asset("bottom_black_cottonPants"))
+        let ariaOuter    = makeItem(owner: aria, category: .outerwear, image: asset("outer_black_moto"))
+        let ariaShoes    = makeItem(owner: aria, category: .shoes,     image: asset("shoes_orange_chunky"))
+        let ariaAcc      = makeItem(owner: aria, category: .accessory, image: asset("acc_chain_bracelet"), wishlist: true)
 
-            // Aria
-            makeItem(owner: aria, category: .top, seed: "aria1"),
-            makeItem(owner: aria, category: .bottom, seed: "aria2"),
-            makeItem(owner: aria, category: .outerwear, seed: "aria3"),
-            makeItem(owner: aria, category: .shoes, seed: "aria4"),
-            makeItem(owner: aria, category: .accessory, seed: "aria5", wishlist: true),
+        // Kai — minimal
+        let kaiTop       = makeItem(owner: kai, category: .top,       image: asset("top_white_tshirt"))
+        let kaiBottom    = makeItem(owner: kai, category: .bottom,    image: asset("bottom_beige_trousers"))
+        let kaiOuter     = makeItem(owner: kai, category: .outerwear, image: asset("outer_tan_jacket"))
+        let kaiShoes     = makeItem(owner: kai, category: .shoes,     image: asset("shoes_blue_suede"))
 
-            // Kai
-            makeItem(owner: kai, category: .top, seed: "kai1"),
-            makeItem(owner: kai, category: .bottom, seed: "kai2"),
-            makeItem(owner: kai, category: .outerwear, seed: "kai3"),
-            makeItem(owner: kai, category: .shoes, seed: "kai4"),
+        // Jules — bold
+        let julesTop     = makeItem(owner: jules, category: .top,       image: asset("top_red_polo"))
+        let julesBottom  = makeItem(owner: jules, category: .bottom,    image: asset("bottom_jeans_trouser"))
+        let julesShoes   = makeItem(owner: jules, category: .shoes,     image: asset("shoes_silver_hightop"))
+        let julesOuter   = makeItem(owner: jules, category: .outerwear, image: asset("outer_purple_snow"))
+        let julesAcc     = makeItem(owner: jules, category: .accessory, image: asset("acc_ring"))
+        let julesShoes2  = makeItem(owner: jules, category: .shoes,     image: asset("shoes_rainbow_heels"))
 
-            // Jules
-            makeItem(owner: jules, category: .top, seed: "jules1"),
-            makeItem(owner: jules, category: .bottom, seed: "jules2"),
-            makeItem(owner: jules, category: .shoes, seed: "jules3"),
-            makeItem(owner: jules, category: .outerwear, seed: "jules4"),
-            makeItem(owner: jules, category: .accessory, seed: "jules5"),
+        // Lena — soft neutrals
+        let lenaTop      = makeItem(owner: lena, category: .top,       image: asset("top_white_boatneck"))
+        let lenaTop2     = makeItem(owner: lena, category: .top,       image: asset("top_mint-green_tshirt"))
+        let lenaBottom   = makeItem(owner: lena, category: .bottom,    image: asset("bottom_beige_trousers"))
+        let lenaOuter    = makeItem(owner: lena, category: .outerwear, image: asset("outer_navy_rain"))
+        let lenaShoes    = makeItem(owner: lena, category: .shoes,     image: asset("shoes_blue_heels"))
+        let lenaShoes2   = makeItem(owner: lena, category: .shoes,     image: asset("shoes_denim_sandals"))
+        let lenaAcc      = makeItem(owner: lena, category: .accessory, image: asset("acc_rose_earrings"))
 
-            // Lena
-            makeItem(owner: lena, category: .top, seed: "lena1"),
-            makeItem(owner: lena, category: .bottom, seed: "lena2"),
-            makeItem(owner: lena, category: .shoes, seed: "lena3"),
+        // Marcus — techwear
+        let marcusTop    = makeItem(owner: marcus, category: .top,       image: asset("top_gray_tshirt"))
+        let marcusTop2   = makeItem(owner: marcus, category: .top,       image: asset("top_black_polo"))
+        let marcusBottom = makeItem(owner: marcus, category: .bottom,    image: asset("bottom_black_cottonPants"))
+        let marcusOuter  = makeItem(owner: marcus, category: .outerwear, image: asset("outer_purple_snow"))
+        let marcusShoes  = makeItem(owner: marcus, category: .shoes,     image: asset("shoes_silver_hightop"))
+        let marcusAcc    = makeItem(owner: marcus, category: .accessory, image: asset("acc_backpack"))
 
-            // Marcus
-            makeItem(owner: marcus, category: .top, seed: "marcus1"),
-            makeItem(owner: marcus, category: .bottom, seed: "marcus2"),
-            makeItem(owner: marcus, category: .outerwear, seed: "marcus3"),
-            makeItem(owner: marcus, category: .shoes, seed: "marcus4"),
+        // Ivy — thrift
+        let ivyTop       = makeItem(owner: ivy, category: .top,       image: asset("top_red-checkered_button-up"))
+        let ivyBottom    = makeItem(owner: ivy, category: .bottom,    image: asset("bottom_olive_shorts"))
+        let ivyShoes     = makeItem(owner: ivy, category: .shoes,     image: asset("shoes_pink_vans"))
+        let ivyShoes2    = makeItem(owner: ivy, category: .shoes,     image: asset("shoes_chocolate_heels"))
+        let ivyAcc       = makeItem(owner: ivy, category: .accessory, image: asset("acc_blue_cap"))
 
-            // Ivy
-            makeItem(owner: ivy, category: .top, seed: "ivy1"),
-            makeItem(owner: ivy, category: .bottom, seed: "ivy2"),
-            makeItem(owner: ivy, category: .accessory, seed: "ivy3"),
+        items = [
+            meTop, meBottom, meOuter, meShoes, meAcc,
+            ariaTop, ariaBottom, ariaOuter, ariaShoes, ariaAcc,
+            kaiTop, kaiBottom, kaiOuter, kaiShoes,
+            julesTop, julesBottom, julesShoes, julesOuter, julesAcc, julesShoes2,
+            lenaTop, lenaTop2, lenaBottom, lenaOuter, lenaShoes, lenaShoes2, lenaAcc,
+            marcusTop, marcusTop2, marcusBottom, marcusOuter, marcusShoes, marcusAcc,
+            ivyTop, ivyBottom, ivyShoes, ivyShoes2, ivyAcc,
         ]
 
-        items = allItems
+        // MARK: - Outfits (curated, not shuffled)
 
-        // MARK: - Outfit helper
-
-        func makeOutfit(owner: Profile, itemPool: [ClothingItem], caption: String, occasion: String, hoursAgo: Double, hotness: Double = 0.5) -> Outfit {
+        func outfit(owner: Profile, itemIds: [UUID], caption: String, occasion: String, hoursAgo: Double, hotness: Double = 0.5) -> Outfit {
             Outfit(
                 id: UUID(),
                 ownerId: owner.id,
                 occasion: occasion,
-                itemIds: itemPool.shuffled().prefix(3).map { $0.id },
+                itemIds: itemIds,
                 caption: caption,
                 published: true,
                 createdAt: Date(timeIntervalSinceNow: -hoursAgo * 3600),
@@ -119,15 +135,13 @@ final class MockStore {
             )
         }
 
-        // MARK: - Outfits
-
         outfits = [
-            makeOutfit(owner: aria,   itemPool: allItems, caption: "weekend fit 🖤",   occasion: "Streetwear", hoursAgo: 1, hotness: 0.82),
-            makeOutfit(owner: kai,    itemPool: allItems, caption: "clean lines only", occasion: "Work",       hoursAgo: 2, hotness: 0.55),
-            makeOutfit(owner: jules,  itemPool: allItems, caption: "loud energy",      occasion: "Night Out",  hoursAgo: 3, hotness: 0.73),
-            makeOutfit(owner: lena,   itemPool: allItems, caption: "soft tones",       occasion: "Casual",     hoursAgo: 5, hotness: 0.35),
-            makeOutfit(owner: marcus, itemPool: allItems, caption: "tech mode",        occasion: "City",       hoursAgo: 6, hotness: 0.48),
-            makeOutfit(owner: ivy,    itemPool: allItems, caption: "thrifted gems",    occasion: "Vintage",    hoursAgo: 8, hotness: 0.28)
+            outfit(owner: aria,   itemIds: [ariaTop.id, ariaBottom.id, ariaOuter.id, ariaShoes.id, ariaAcc.id],          caption: "weekend fit 🖤",   occasion: "Streetwear", hoursAgo: 1, hotness: 0.82),
+            outfit(owner: kai,    itemIds: [kaiTop.id, kaiBottom.id, kaiOuter.id, kaiShoes.id],                          caption: "clean lines only", occasion: "Work",       hoursAgo: 2, hotness: 0.55),
+            outfit(owner: jules,  itemIds: [julesTop.id, julesBottom.id, julesOuter.id, julesShoes.id, julesAcc.id],      caption: "loud energy",      occasion: "Night Out",  hoursAgo: 3, hotness: 0.73),
+            outfit(owner: lena,   itemIds: [lenaTop.id, lenaBottom.id, lenaOuter.id, lenaShoes.id, lenaAcc.id],           caption: "soft tones",       occasion: "Casual",     hoursAgo: 5, hotness: 0.35),
+            outfit(owner: marcus, itemIds: [marcusTop.id, marcusBottom.id, marcusOuter.id, marcusShoes.id, marcusAcc.id], caption: "tech mode",        occasion: "City",       hoursAgo: 6, hotness: 0.48),
+            outfit(owner: ivy,    itemIds: [ivyTop.id, ivyBottom.id, ivyShoes.id, ivyAcc.id],                            caption: "thrifted gems",     occasion: "Vintage",    hoursAgo: 8, hotness: 0.28),
         ]
 
         // MARK: - Follows

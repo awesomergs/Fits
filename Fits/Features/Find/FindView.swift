@@ -88,6 +88,12 @@ struct FindView: View {
             }
         }  // VStack
         }  // ZStack
+        .task {
+            ItemCategory.allCases.filter { $0 != .fullBody }.forEach {
+                model.loadRailItems(for: $0)
+            }
+            model.loadWishlist()
+        }
     }
 }
 

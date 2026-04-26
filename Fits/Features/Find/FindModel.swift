@@ -38,8 +38,7 @@ final class FindModel {
     // MARK: - Rails
 
     func loadRailItems(for category: ItemCategory) {
-        let items = mockStore.myItems(wishlist: false)
-        railItems[category] = items.filter { $0.category == category }
+        railItems[category] = mockStore.items.filter { $0.category == category && !$0.isWishlist }
     }
 
     func railItems(for category: ItemCategory) -> [ClothingItem] {

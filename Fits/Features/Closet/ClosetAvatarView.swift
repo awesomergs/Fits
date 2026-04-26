@@ -99,12 +99,6 @@ struct ClosetAvatarView: View {
     private func clothingLayers(width: CGFloat, scale: CGFloat) -> some View {
         let totalHeight = width * 1.8
 
-        if let item = picks[.outerwear] {
-            wornItem(item, width: width * 0.92, height: totalHeight * 0.40)
-                .offset(y: totalHeight * 0.18)
-                .allowsHitTesting(false)
-        }
-
         if let item = picks[.top] {
             wornItem(item, width: width * 0.70, height: totalHeight * 0.32)
                 .offset(y: totalHeight * 0.22)
@@ -132,12 +126,6 @@ struct ClosetAvatarView: View {
             .allowsHitTesting(false)
         }
 
-        if let item = picks[.accessory] {
-            wornItem(item, width: width * 0.22, height: width * 0.22)
-                .offset(x: width * 0.22, y: totalHeight * 0.19)
-                .allowsHitTesting(false)
-        }
-
         zoneTapTargets(width: width, totalHeight: totalHeight)
     }
 
@@ -153,11 +141,9 @@ struct ClosetAvatarView: View {
     @ViewBuilder
     private func zoneTapTargets(width: CGFloat, totalHeight: CGFloat) -> some View {
         let zones: [(ItemCategory, CGFloat, CGFloat, CGFloat, CGFloat)] = [
-            (.outerwear, width * 0.92, totalHeight * 0.40, 0, totalHeight * 0.18),
             (.top, width * 0.70, totalHeight * 0.32, 0, totalHeight * 0.22),
             (.bottom, width * 0.65, totalHeight * 0.38, 0, totalHeight * 0.50),
             (.shoes, width * 0.60, totalHeight * 0.12, 0, totalHeight * 0.84),
-            (.accessory, width * 0.22, width * 0.22, width * 0.22, totalHeight * 0.19),
         ]
 
         ForEach(zones, id: \.0) { (category, w, h, ox, oy) in
@@ -196,7 +182,7 @@ struct ClosetAvatarView: View {
     private var categoryTray: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack {
-                ForEach(ItemCategory.allCases, id: \.self) { category in
+                ForEach(ItemCategory.allCases.filter { $0 != .outerwear && $0 != .accessory }, id: \.self) { category in
                     if !(itemsByCategory[category] ?? []).isEmpty {
                         Button {
                             selectedCategory = category

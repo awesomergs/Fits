@@ -67,6 +67,10 @@ struct ItemImageView: View {
 
     private static func loadImage(for item: ClothingItem) async -> UIImage? {
         if let img = MockStore.shared.imageCache[item.id] { return img }
+        if item.imageUrl.hasPrefix("asset://") {
+            let name = String(item.imageUrl.dropFirst("asset://".count))
+            return UIImage(named: name)
+        }
         if let img = ImageCache.shared.get(item.imageUrl) { return img }
         guard let url = URL(string: item.imageUrl),
               let (data, _) = try? await URLSession.shared.data(from: url),

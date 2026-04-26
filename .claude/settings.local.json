@@ -6,7 +6,20 @@
       "Bash(swift build *)",
       "Bash(xcodebuild -scheme Fits -showBuildSettings)",
       "Bash(xcodebuild -scheme Fits -destination 'generic/platform=iOS')",
-      "Bash(swiftc -typecheck Fits/Services/MockStore.swift -I Fits/Models)"
+      "Bash(swiftc -typecheck Fits/Services/MockStore.swift -I Fits/Models)",
+      "WebSearch",
+      "WebFetch(domain:fakestoreapi.com)",
+      "WebFetch(domain:www.stickpng.com)",
+      "WebFetch(domain:api.escuelajs.co)",
+      "WebFetch(domain:freepngimg.com)",
+      "WebFetch(domain:www.hiclipart.com)",
+      "Bash(python3 -c \"import rembg; print\\('rembg ok'\\)\")",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(magick --version)",
+      "Bash(convert --version)",
+      "Bash(python3 -c \"import rembg; print\\('rembg OK'\\)\")",
+      "Bash(git add *)",
+      "Bash(git stash *)"
     ]
   }
 }
