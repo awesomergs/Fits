@@ -94,7 +94,11 @@ Storage buckets: `clothing` (item cutout PNGs), `avatars`
 RLS: public read on profiles/items/reactions, self-write only
 
 ## Team Members:
+
 Rohan George
+
 Pranet Jagtap
+
 Rachit Kumar
+
 Gautham Gopinath
