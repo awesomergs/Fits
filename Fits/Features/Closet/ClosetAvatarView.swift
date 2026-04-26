@@ -80,6 +80,13 @@ struct ClosetAvatarView: View {
             let scale = w / 300
 
             ZStack(alignment: .top) {
+                MannequinShape()                                                                                                                     
+                    .fill(FitsTheme.muted.opacity(0.35))                                                                                             
+                    .frame(width: w, height: w * 1.8)                                                                                                
+                                                                                                                                                     
+                MannequinShape()                                                                                                                     
+                    .stroke(FitsTheme.primary.opacity(0.25), lineWidth: 1.5)                                                                         
+                    .frame(width: w, height: w * 1.8) 
                 clothingLayers(width: w, scale: scale)
             }
             .drawingGroup()
