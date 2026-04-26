@@ -8,6 +8,8 @@ import SwiftUI
 struct FindView: View {
 
     @State private var model = FindModel()
+    @State private var selectedProfile: Profile? = nil
+    @State private var showProfile = false
 
     var body: some View {
         ZStack {
@@ -48,25 +50,40 @@ struct FindView: View {
                         .padding()
                 } else {
                     List(model.searchResults, id: \.id) { profile in
-                        HStack {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(FitsTheme.accent)
+                        Button {
+                            selectedProfile = profile
+                            showProfile = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(FitsTheme.accent)
 
-                            VStack(alignment: .leading) {
-                                Text(profile.username)
-                                    .font(.fitsHeadline)
-                                    .foregroundStyle(FitsTheme.primary)
+                                VStack(alignment: .leading) {
+                                    Text(profile.username)
+                                        .font(.fitsHeadline)
+                                        .foregroundStyle(FitsTheme.primary)
 
-                                Text(profile.id.uuidString)
-                                    .font(.fitsCaption)
-                                    .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                                    Text("@\(profile.username.lowercased())")
+                                        .font(.fitsCaption)
+                                        .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(FitsTheme.muted)
                             }
                         }
+                        .buttonStyle(.plain)
                         .listRowBackground(FitsTheme.background)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .sheet(item: $selectedProfile) { profile in
+                        MiniProfileView(profile: profile)
+                    }
                 }
 
             } else {
@@ -159,6 +176,82 @@ struct FindItemCard: View {
             Text(item.category.displayName)
                 .font(.fitsCaption)
                 .foregroundStyle(FitsTheme.primary.opacity(0.7))
+        }
+    }
+}
+
+// MARK: - Mini Profile
+
+struct MiniProfileView: View {
+    let profile: Profile
+
+    @State private var topOutfit: Outfit? = nil
+    @State private var outfitItems: [ClothingItem] = []
+
+    private let store = MockStore.shared
+
+    var body: some View {
+        ZStack {
+            FitsTheme.background.ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 6) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(FitsTheme.accent)
+
+                    Text(profile.username)
+                        .font(.fitsHeadline)
+                        .foregroundStyle(FitsTheme.primary)
+
+                    Text("@\(profile.username.lowercased())")
+                        .font(.fitsCaption)
+                        .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                }
+                .padding(.top, 20)
+
+                // Top outfit
+                if let outfit = topOutfit {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Latest Fit")
+                                .font(.fitsHeadline)
+                                .foregroundStyle(FitsTheme.primary)
+                            Spacer()
+                            Text(outfit.occasion)
+                                .font(.fitsCaption)
+                                .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                        }
+                        .padding(.horizontal, 20)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(outfitItems) { item in
+                                    ItemImageView(item: item, contentMode: .fill)
+                                        .frame(width: 110, height: 140)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                } else {
+                    Text("No outfits yet")
+                        .font(.fitsCaption)
+                        .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                        .padding(.top, 20)
+                }
+
+                Spacer()
+            }
+        }
+        .presentationDetents([.medium])
+        .onAppear {
+            topOutfit = store.outfitsByUser(profile.id).first
+            if let outfit = topOutfit {
+                outfitItems = store.itemsByIds(outfit.itemIds)
+            }
         }
     }
 }
