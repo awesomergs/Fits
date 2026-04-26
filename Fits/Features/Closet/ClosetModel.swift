@@ -8,11 +8,11 @@ import Observation
 
 @Observable
 final class ClosetModel {
-    var allItems: [ClothingItem] = []
-    var isLoading = false
-    var error: String?
-
     private let mockStore = MockStore.shared
+
+    var allItems: [ClothingItem] {
+        mockStore.myItems(wishlist: false)
+    }
 
     var populatedCategories: [ItemCategory] {
         ItemCategory.allCases.filter { !items(for: $0).isEmpty }
@@ -24,14 +24,6 @@ final class ClosetModel {
 
     var isEmpty: Bool {
         allItems.isEmpty
-    }
-
-    func load() {
-        allItems = mockStore.myItems(wishlist: false)
-    }
-
-    func loadWishlist() {
-        allItems = mockStore.myItems(wishlist: true)
     }
 
     func publishOutfit(
@@ -46,7 +38,6 @@ final class ClosetModel {
             caption: caption,
             published: true
         )
-
         mockStore.publishOutfit(outfit)
     }
 }

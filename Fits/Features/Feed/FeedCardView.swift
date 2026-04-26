@@ -63,7 +63,6 @@ struct FeedCardView: View {
                     .clipped()
             }
         }
-        .ignoresSafeArea()
     }
 
     // MARK: - Outfit content
@@ -92,7 +91,7 @@ struct FeedCardView: View {
                     .clipShape(Capsule())
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 100)
+            .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
     }
@@ -184,7 +183,7 @@ struct FeedCardView: View {
             }
         }
         .padding(.trailing, 16)
-        .padding(.bottom, 100)
+        .padding(.bottom, 32)
         .frame(width: 80)
     }
 
@@ -264,7 +263,7 @@ struct FeedCardView: View {
 
     private func showStealToast() {
         let count = items.count
-        stealToastMessage = "\(count) \(count == 1 ? "item" : "items") added to wishlist"
+        stealToastMessage = "\(count) \(count == 1 ? "item" : "items") added to your closet"
         Task {
             try? await Task.sleep(for: .seconds(2.5))
             stealToastMessage = nil

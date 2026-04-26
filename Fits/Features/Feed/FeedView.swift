@@ -21,16 +21,15 @@ struct FeedView: View {
                 pagingFeed
             }
         }
-        .ignoresSafeArea()
         .onAppear { model.load() }
     }
 
-    // MARK: - Vertical paging feed
+    // MARK: - Scrolling feed
 
     private var pagingFeed: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: 16) {
                     ForEach(Array(model.deck.enumerated()), id: \.element.id) { index, outfit in
                         FeedCardView(
                             outfit: outfit,
@@ -49,12 +48,16 @@ struct FeedView: View {
                             }
                         )
                         .id(outfit.id)
-                        .containerRelativeFrame([.horizontal, .vertical])
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 560)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 .scrollTargetLayout()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .scrollTargetBehavior(.paging)
+            .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
         }
     }

@@ -35,17 +35,24 @@ struct ItemImageView: View {
     var contentMode: ContentMode = .fill
 
     var body: some View {
-        AsyncImage(url: URL(string: item.imageUrl)) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().aspectRatio(contentMode: contentMode)
-            case .failure:
-                placeholderRect
-            default:
-                placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
+        if let cached = MockStore.shared.imageCache[item.id] {
+            Image(uiImage: cached)
+                .resizable()
+                .aspectRatio(contentMode: contentMode)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            AsyncImage(url: URL(string: item.imageUrl)) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: contentMode)
+                case .failure:
+                    placeholderRect
+                default:
+                    placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var placeholderRect: some View {

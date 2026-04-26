@@ -54,7 +54,6 @@ struct ClosetView: View {
                 OutfitBuilderView()
             }
         }
-        .task { await model.load() }
     }
 
     // MARK: - Content switcher

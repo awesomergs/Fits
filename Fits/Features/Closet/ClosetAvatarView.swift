@@ -14,6 +14,7 @@ struct ClosetAvatarView: View {
     @State private var picks: [ItemCategory: ClothingItem] = [:]
     @State private var selectedCategory: ItemCategory? = nil
     @State private var showingPicker = false
+    @State private var showEmptySlots = true
 
     private var itemsByCategory: [ItemCategory: [ClothingItem]] {
         Dictionary(grouping: items.filter { !$0.isWishlist }, by: \.category)
@@ -31,12 +32,13 @@ struct ClosetAvatarView: View {
 
                     categoryTray
 
+                    emptySlotToggle
+
                     buildFitButton
                 }
                 .padding(.bottom, 24)
             }
         }
-        .onAppear { autoPickFirstItems() }
         .sheet(isPresented: $showingPicker) {
             if let category = selectedCategory {
                 CategoryPickerSheet(
@@ -44,7 +46,11 @@ struct ClosetAvatarView: View {
                     items: itemsByCategory[category] ?? [],
                     selected: picks[category],
                     onPick: { item in
-                        picks[category] = item
+                        if let item {
+                            picks[category] = item
+                        } else {
+                            picks.removeValue(forKey: category)
+                        }
                         showingPicker = false
                     }
                 )
@@ -151,7 +157,7 @@ struct ClosetAvatarView: View {
             let hasItem = picks[category] != nil
             let hasOptions = !(itemsByCategory[category] ?? []).isEmpty
 
-            if hasOptions {
+            if hasOptions && (hasItem || showEmptySlots) {
                 Button {
                     selectedCategory = category
                     showingPicker = true
@@ -183,6 +189,21 @@ struct ClosetAvatarView: View {
                 .offset(x: ox, y: oy)
             }
         }
+    }
+
+    // MARK: - Empty slot toggle
+
+    private var emptySlotToggle: some View {
+        HStack {
+            Label("Show empty slots", systemImage: "square.dashed")
+                .font(.fitsCaption)
+                .foregroundStyle(FitsTheme.primary.opacity(0.7))
+            Spacer()
+            Toggle("", isOn: $showEmptySlots)
+                .tint(FitsTheme.accent)
+                .labelsHidden()
+        }
+        .padding(.horizontal, 24)
     }
 
     // MARK: - Category tray (quick swaps below the avatar)
@@ -245,15 +266,6 @@ struct ClosetAvatarView: View {
         .padding(.horizontal, 24)
     }
 
-    // MARK: - Helpers
-
-    private func autoPickFirstItems() {
-        for category in ItemCategory.allCases {
-            if picks[category] == nil, let first = itemsByCategory[category]?.first {
-                picks[category] = first
-            }
-        }
-    }
 }
 
 // MARK: - Mannequin SVG shape
@@ -349,7 +361,7 @@ struct CategoryPickerSheet: View {
     let category: ItemCategory
     let items: [ClothingItem]
     let selected: ClothingItem?
-    let onPick: (ClothingItem) -> Void
+    let onPick: (ClothingItem?) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -365,6 +377,29 @@ struct CategoryPickerSheet: View {
                     columns: [GridItem(.adaptive(minimum: 100), spacing: 12)],
                     spacing: 12
                 ) {
+                    // N/A tile — clears the slot
+                    Button { onPick(nil) } label: {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(FitsTheme.muted.opacity(0.25))
+                            .frame(width: 100, height: 130)
+                            .overlay {
+                                VStack(spacing: 6) {
+                                    Image(systemName: "xmark.circle")
+                                        .font(.system(size: 26, weight: .light))
+                                    Text("None")
+                                        .font(.fitsCaption)
+                                }
+                                .foregroundStyle(FitsTheme.primary.opacity(0.55))
+                            }
+                            .overlay {
+                                if selected == nil {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .strokeBorder(FitsTheme.accent, lineWidth: 3)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+
                     ForEach(items) { item in
                         Button {
                             onPick(item)

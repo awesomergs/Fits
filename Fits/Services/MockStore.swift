@@ -201,7 +201,7 @@ final class MockStore {
                 ownerId: currentUser.id,
                 imageUrl: $0.imageUrl,
                 category: $0.category,
-                isWishlist: true,
+                isWishlist: false,
                 sourceItemId: $0.id
             )
         }

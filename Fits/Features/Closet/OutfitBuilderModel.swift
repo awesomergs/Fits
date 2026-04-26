@@ -10,7 +10,6 @@ import Observation
 final class OutfitBuilderModel {
     var picks: [ItemCategory: ClothingItem] = [:]
     var selectedOccasion = "Casual"
-    var allItems: [ClothingItem] = []
     var isPublishing = false
     var showSuccessToast = false
     var error: String?
@@ -19,15 +18,15 @@ final class OutfitBuilderModel {
 
     private let mockStore = MockStore.shared
 
+    var allItems: [ClothingItem] {
+        mockStore.myItems(wishlist: false)
+    }
+
     var availableCategories: [ItemCategory] {
         ItemCategory.allCases.filter { !items(for: $0).isEmpty }
     }
 
     var canPublish: Bool { !picks.isEmpty && !isPublishing }
-
-    func load() {
-        allItems = mockStore.myItems(wishlist: false)
-    }
 
     func items(for category: ItemCategory) -> [ClothingItem] {
         allItems.filter { $0.category == category }
