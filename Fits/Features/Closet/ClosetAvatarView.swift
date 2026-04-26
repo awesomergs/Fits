@@ -35,21 +35,49 @@ struct ClosetAvatarView: View {
         Dictionary(grouping: items.filter { !$0.isWishlist }, by: \.category)
     }
 
+    var hotScore: Int { computeHotScore(items: Array(picks.values)) }
+
     var body: some View {
         ZStack {
             FitsTheme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 24) {
-                    mannequin
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
+                VStack(spacing: 12) {
+                    ZStack(alignment: .top) {
+
+                        mannequin
+                            .padding(.horizontal, 24)
+
+                        let score = hotScore
+
+                        ZStack {
+                            HStack(spacing: 6) {
+                                Image(systemName: score >= 50 ? "flame.fill" : "trash.fill")
+                                    .font(.system(size: 18, weight: .bold))
+
+                                Text("\(score)%")
+                                    .font(.system(size: 22, weight: .black))
+                            }
+                            .foregroundStyle(score >= 50 ? Color.orange : Color.gray)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(score >= 50 ? Color.orange : Color.gray, lineWidth: 2)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .rotationEffect(.degrees(score >= 50 ? 8 : -8))
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(.top, 20)
+                    }
 
                     categoryTray
                     emptySlotToggle
                     buildFitButton
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 12)
             }
         }
         .sheet(isPresented: $showingPicker) {
@@ -91,7 +119,8 @@ struct ClosetAvatarView: View {
             }
             .drawingGroup()
         }
-        .aspectRatio(300.0 / 540.0, contentMode: .fit)
+        .aspectRatio(300.0 / 540.0, contentMode: .fill)
+        .clipped()
     }
 
     @ViewBuilder
@@ -229,6 +258,49 @@ struct ClosetAvatarView: View {
         .disabled(picks.isEmpty)
         .padding(.horizontal, 24)
     }
+}
+
+// MARK: - Hot score
+
+private func computeHotScore(items: [ClothingItem]) -> Int {
+    guard !items.isEmpty else { return Int.random(in: 0...100) }
+
+    var score = 0
+
+    // Parse names from imageUrl last path component (e.g. "top_black_tshirt.png" → ["top","black","tshirt"])
+    let parts: [[String]] = items.compactMap { item in
+        let name = URL(string: item.imageUrl)
+            .map { $0.deletingPathExtension().lastPathComponent }
+            ?? String(item.imageUrl.split(separator: "/").last ?? "")
+        guard !name.isEmpty, name != item.imageUrl else { return nil }
+        return name.components(separatedBy: "_").filter { !$0.isEmpty }
+    }
+
+    // If any item had no parseable name, return fully random
+    guard parts.count == items.count else { return Int.random(in: 0...100) }
+
+    let allTokens = parts.flatMap { $0 }
+
+    // +20 for complete outfit coverage
+    let categories = Set(items.map { $0.category })
+    let hasFullOutfit = (categories.contains(.top) && categories.contains(.bottom) && categories.contains(.shoes))
+        || (categories.contains(.fullBody) && categories.contains(.shoes))
+    if hasFullOutfit { score += 20 }
+
+    // +15 for cohesive color family
+    let neutrals: Set<String> = ["black", "white", "gray", "grey", "beige", "cream", "tan", "ivory", "off-white"]
+    let itemColors = allTokens.filter { neutrals.contains($0.lowercased()) }
+    if itemColors.count >= items.count - 1 { score += 15 }
+
+    // +15 for consistent top style
+    let topStyles: Set<String> = ["tshirt", "polo", "button-up", "buttonup", "crewneck", "henley", "boatneck"]
+    let matchingStyles = allTokens.filter { topStyles.contains($0.lowercased()) }
+    if matchingStyles.count >= 1 { score += 15 }
+
+    // +0–20 random flair
+    score += Int.random(in: 0...20)
+
+    return min(max(score, 0), 100)
 }
 
 // MARK: - Mannequin SVG shape
