@@ -24,7 +24,7 @@ struct TabBarView: View {
                     Label("Tag", systemImage: "plus.circle.fill")
                 }
 
-            PlaceholderView(title: "Closet")
+            ClosetView()
                 .tabItem {
                     Label("Closet", systemImage: "tshirt")
                 }
