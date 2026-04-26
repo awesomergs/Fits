@@ -90,6 +90,7 @@ struct ClosetAvatarView: View {
 
                 clothingLayers(width: w, scale: scale)
             }
+            .drawingGroup()
         }
         .aspectRatio(300.0 / 540.0, contentMode: .fit)
     }

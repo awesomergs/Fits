@@ -28,31 +28,51 @@ struct ToastView: View {
     }
 }
 
+// MARK: - Image cache
+
+private final class ImageCache {
+    static let shared = ImageCache()
+    private let cache = NSCache<NSString, UIImage>()
+    private init() { cache.countLimit = 200 }
+    func get(_ key: String) -> UIImage? { cache.object(forKey: key as NSString) }
+    func set(_ image: UIImage, for key: String) { cache.setObject(image, forKey: key as NSString) }
+}
+
 // MARK: - Item image
 
 struct ItemImageView: View {
     let item: ClothingItem
     var contentMode: ContentMode = .fill
 
+    @State private var uiImage: UIImage? = nil
+
     var body: some View {
-        if let cached = MockStore.shared.imageCache[item.id] {
-            Image(uiImage: cached)
-                .resizable()
-                .aspectRatio(contentMode: contentMode)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            AsyncImage(url: URL(string: item.imageUrl)) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().aspectRatio(contentMode: contentMode)
-                case .failure:
-                    placeholderRect
-                default:
-                    placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
-                }
+        Group {
+            if let img = uiImage {
+                Image(uiImage: img)
+                    .resizable()
+                    .interpolation(.low)
+                    .aspectRatio(contentMode: contentMode)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+            } else {
+                placeholderRect
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .task(id: item.id) {
+            uiImage = await Self.loadImage(for: item)
+        }
+    }
+
+    private static func loadImage(for item: ClothingItem) async -> UIImage? {
+        if let img = MockStore.shared.imageCache[item.id] { return img }
+        if let img = ImageCache.shared.get(item.imageUrl) { return img }
+        guard let url = URL(string: item.imageUrl),
+              let (data, _) = try? await URLSession.shared.data(from: url),
+              let img = UIImage(data: data) else { return nil }
+        ImageCache.shared.set(img, for: item.imageUrl)
+        return img
     }
 
     private var placeholderRect: some View {
