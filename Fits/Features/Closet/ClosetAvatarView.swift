@@ -80,14 +80,6 @@ struct ClosetAvatarView: View {
             let scale = w / 300
 
             ZStack(alignment: .top) {
-                MannequinShape()
-                    .fill(FitsTheme.muted.opacity(0.35))
-                    .frame(width: w, height: w * 1.8)
-
-                MannequinShape()
-                    .stroke(FitsTheme.primary.opacity(0.25), lineWidth: 1.5)
-                    .frame(width: w, height: w * 1.8)
-
                 clothingLayers(width: w, scale: scale)
             }
             .drawingGroup()
@@ -130,7 +122,7 @@ struct ClosetAvatarView: View {
     }
 
     private func wornItem(_ item: ClothingItem, width: CGFloat, height: CGFloat) -> some View {
-        ItemImageView(item: item, contentMode: .fill)
+        ItemImageView(item: item, contentMode: .fit)
             .frame(width: width, height: height)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
