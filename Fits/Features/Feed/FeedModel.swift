@@ -45,7 +45,6 @@ final class FeedModel {
     }
 
     func react(to outfit: Outfit, kind: ReactionKind) {
-        deck.removeAll { $0.id == outfit.id }
         mockStore.react(to: outfit.id, kind: kind)
     }
 

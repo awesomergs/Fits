@@ -22,36 +22,49 @@ struct FeedView: View {
             }
         }
         .ignoresSafeArea()
-        .task { await model.load() }
+        .onAppear { model.load() }
     }
 
     // MARK: - Vertical paging feed
 
     private var pagingFeed: some View {
-        ScrollView(.vertical) {
-            LazyVStack(spacing: 0) {
-                ForEach(model.deck) { outfit in
-                    FeedCardView(
-                        outfit: outfit,
-                        items: model.items(for: outfit),
-                        profile: model.profile(for: outfit),
-                        onLike: {
-                            Task { await model.react(to: outfit, kind: .like) }
-                        },
-                        onDislike: {
-                            Task { await model.react(to: outfit, kind: .dislike) }
-                        },
-                        onSteal: {
-                            Task { await model.steal(outfit) }
-                        }
-                    )
-                    .containerRelativeFrame([.horizontal, .vertical])
+        ScrollViewReader { proxy in
+            ScrollView(.vertical) {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(model.deck.enumerated()), id: \.element.id) { index, outfit in
+                        FeedCardView(
+                            outfit: outfit,
+                            items: model.items(for: outfit),
+                            profile: model.profile(for: outfit),
+                            onLike: {
+                                model.react(to: outfit, kind: .like)
+                                scrollToNext(from: index, proxy: proxy)
+                            },
+                            onDislike: {
+                                model.react(to: outfit, kind: .dislike)
+                                scrollToNext(from: index, proxy: proxy)
+                            },
+                            onSteal: {
+                                model.steal(outfit)
+                            }
+                        )
+                        .id(outfit.id)
+                        .containerRelativeFrame([.horizontal, .vertical])
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
+            .scrollTargetBehavior(.paging)
+            .scrollIndicators(.hidden)
         }
-        .scrollTargetBehavior(.paging)
-        .scrollIndicators(.hidden)
+    }
+
+    private func scrollToNext(from index: Int, proxy: ScrollViewProxy) {
+        let next = index + 1
+        guard next < model.deck.count else { return }
+        withAnimation(.easeInOut(duration: 0.4)) {
+            proxy.scrollTo(model.deck[next].id, anchor: .top)
+        }
     }
 
     // MARK: - Empty state

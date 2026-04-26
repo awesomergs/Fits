@@ -15,34 +15,24 @@ struct FeedCardView: View {
     var onDislike: (() -> Void)? = nil
     var onSteal: (() -> Void)? = nil
 
-    // Horizontal drag state for like/dislike
     @GestureState private var dragX: CGFloat = 0
-    @State private var committed: Bool = false
-    @State private var commitDirection: CGFloat = 0
+    @State private var stampDirection: CGFloat = 0   // 1 = like, -1 = dislike, 0 = none
     @State private var isStolen: Bool = false
     @State private var stealToastMessage: String? = nil
-    @State private var cardOffset: CGFloat = 0
 
     private let threshold: CGFloat = 90
 
     var body: some View {
         ZStack {
-            // Background: blurred first clothing item photo
             background
 
-            // Main outfit content
             HStack(alignment: .bottom, spacing: 0) {
-                // Left: outfit images + caption
                 outfitContent
-
-                // Right: action sidebar (TikTok style)
                 actionSidebar
             }
 
-            // Swipe stamps overlay
             stampOverlay
 
-            // Steal toast
             if let msg = stealToastMessage {
                 VStack {
                     ToastView(message: msg)
@@ -53,12 +43,10 @@ struct FeedCardView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.75), value: stealToastMessage != nil)
             }
         }
-        .offset(x: committed ? commitDirection * 600 : dragX)
-        .rotationEffect(.degrees(Double(committed ? commitDirection * 12 : dragX / 30)))
-        .animation(
-            committed ? .easeOut(duration: 0.35) : .spring(response: 0.25, dampingFraction: 0.85),
-            value: committed
-        )
+        // When reacted, snap back to center; during drag, follow finger
+        .offset(x: stampDirection != 0 ? 0 : dragX)
+        .rotationEffect(.degrees(stampDirection != 0 ? 0 : Double(dragX / 30)))
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: stampDirection)
         .gesture(horizontalSwipeGesture)
     }
 
@@ -83,11 +71,8 @@ struct FeedCardView: View {
     private var outfitContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             Spacer()
-
-            // Items grid
             itemsGrid
 
-            // Profile info + caption
             VStack(alignment: .leading, spacing: 6) {
                 profileRow
 
@@ -113,8 +98,6 @@ struct FeedCardView: View {
     }
 
     private var itemsGrid: some View {
-        let cols = min(items.count, 2)
-        let rows = cols == 0 ? 0 : Int(ceil(Double(min(items.count, 4)) / Double(cols)))
         let gridItems = Array(items.prefix(4))
 
         return Group {
@@ -143,7 +126,7 @@ struct FeedCardView: View {
 
     private var profileRow: some View {
         HStack(spacing: 8) {
-            AsyncImage(url: URL(string: profile?.avatarUrl ?? "")) { phase in
+            AsyncImage(url: profile?.avatarUrl.flatMap(URL.init)) { phase in
                 switch phase {
                 case .success(let img): img.resizable().scaledToFill()
                 default: Circle().fill(.white.opacity(0.3))
@@ -165,14 +148,13 @@ struct FeedCardView: View {
         .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
     }
 
-    // MARK: - Action sidebar (TikTok right panel)
+    // MARK: - Action sidebar
 
     private var actionSidebar: some View {
         VStack(spacing: 24) {
             Spacer()
 
-            // Profile avatar (larger)
-            AsyncImage(url: URL(string: profile?.avatarUrl ?? "")) { phase in
+            AsyncImage(url: profile?.avatarUrl.flatMap(URL.init)) { phase in
                 switch phase {
                 case .success(let img): img.resizable().scaledToFill()
                 default: Circle().fill(.white.opacity(0.3))
@@ -182,40 +164,24 @@ struct FeedCardView: View {
             .clipShape(Circle())
             .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
 
-            // Like button
-            actionButton(
-                systemImage: "heart.fill",
-                label: "Like",
-                color: .white,
-                action: {
-                    guard !committed else { return }
-                    triggerCommit(direction: 1)
-                }
-            )
+            actionButton(systemImage: "heart.fill", label: "Like", color: .white) {
+                triggerReaction(direction: 1)
+            }
 
-            // Steal button
             actionButton(
                 systemImage: isStolen ? "checkmark.circle.fill" : "tshirt.fill",
                 label: isStolen ? "Stolen" : "Steal",
-                color: isStolen ? FitsTheme.accent : .white,
-                action: {
-                    guard !isStolen else { return }
-                    isStolen = true
-                    onSteal?()
-                    showStealToast()
-                }
-            )
+                color: isStolen ? FitsTheme.accent : .white
+            ) {
+                guard !isStolen else { return }
+                isStolen = true
+                onSteal?()
+                showStealToast()
+            }
 
-            // Dislike button
-            actionButton(
-                systemImage: "xmark.circle.fill",
-                label: "Pass",
-                color: .white.opacity(0.7),
-                action: {
-                    guard !committed else { return }
-                    triggerCommit(direction: -1)
-                }
-            )
+            actionButton(systemImage: "xmark.circle.fill", label: "Pass", color: .white.opacity(0.7)) {
+                triggerReaction(direction: -1)
+            }
         }
         .padding(.trailing, 16)
         .padding(.bottom, 100)
@@ -242,73 +208,57 @@ struct FeedCardView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Swipe stamps
+    // MARK: - Stamp overlay
 
     private var stampOverlay: some View {
-        let likeOpacity = dragX > 20 ? min(Double(dragX - 20) / 60, 1.0) : 0
-        let nopeOpacity = dragX < -20 ? min(Double(-dragX - 20) / 60, 1.0) : 0
+        let likeOpacity: Double  = stampDirection > 0 ? 1 : (dragX > 20  ? min(Double(dragX  - 20) / 60, 1) : 0)
+        let nopeOpacity: Double  = stampDirection < 0 ? 1 : (dragX < -20 ? min(Double(-dragX - 20) / 60, 1) : 0)
 
         return ZStack {
-            // LIKE stamp
             Text("LIKE")
                 .font(.system(size: 48, weight: .black))
                 .foregroundStyle(.green)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 12).padding(.vertical, 6)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(.green, lineWidth: 4))
                 .rotationEffect(.degrees(-15))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 80)
-                .padding(.leading, 20)
+                .padding(.top, 80).padding(.leading, 20)
                 .opacity(likeOpacity)
 
-            // NOPE stamp
             Text("NOPE")
                 .font(.system(size: 48, weight: .black))
                 .foregroundStyle(.red)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 12).padding(.vertical, 6)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(.red, lineWidth: 4))
                 .rotationEffect(.degrees(15))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 80)
-                .padding(.trailing, 20)
+                .padding(.top, 80).padding(.trailing, 20)
                 .opacity(nopeOpacity)
         }
     }
 
-    // MARK: - Gestures
+    // MARK: - Gesture
 
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 10)
             .updating($dragX) { value, state, _ in
-                // Only track if primarily horizontal
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 state = value.translation.width
             }
             .onEnded { value in
                 let dx = value.translation.width
                 guard abs(dx) > abs(value.translation.height) else { return }
-
-                if dx > threshold {
-                    triggerCommit(direction: 1)
-                } else if dx < -threshold {
-                    triggerCommit(direction: -1)
-                }
+                if dx > threshold { triggerReaction(direction: 1) }
+                else if dx < -threshold { triggerReaction(direction: -1) }
             }
     }
 
-    private func triggerCommit(direction: CGFloat) {
-        guard !committed else { return }
-        committed = true
-        commitDirection = direction
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            if direction > 0 {
-                onLike?()
-            } else {
-                onDislike?()
-            }
+    private func triggerReaction(direction: CGFloat) {
+        guard stampDirection == 0 else { return }
+        stampDirection = direction
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if direction > 0 { onLike?() } else { onDislike?() }
+            stampDirection = 0
         }
     }
 

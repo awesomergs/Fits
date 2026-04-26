@@ -51,9 +51,11 @@ final class TagModel {
         isSaving = true
         error = nil
 
+        let itemId = UUID()
         let item = ClothingItem(
+            id: itemId,
             ownerId: mockStore.currentUser.id,
-            imageUrl: "mock://item",
+            imageUrl: "https://picsum.photos/seed/\(itemId.uuidString)/300/400",
             category: category,
             isWishlist: isWishlist
         )
