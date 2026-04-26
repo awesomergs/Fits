@@ -139,9 +139,7 @@ struct FindItemCard: View {
                 }
 
                 Button {
-                    Task {
-                        await model.addToWishlist(item)
-                    }
+                    model.addToWishlist(item)
                 } label: {
                     Image(systemName: model.isInWishlist(item) ? "heart.fill" : "heart")
                         .foregroundStyle(model.isInWishlist(item) ? FitsTheme.accent : FitsTheme.primary)

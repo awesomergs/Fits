@@ -9,6 +9,7 @@ struct ClosetView: View {
     @State private var model = ClosetModel()
     @State private var showingBuilder = false
     @State private var viewMode: ClosetViewMode = .shelves
+    @State private var selectedOutfitId: UUID? = nil
 
     enum ClosetViewMode: String, CaseIterable {
         case shelves = "Shelves"
@@ -58,14 +59,61 @@ struct ClosetView: View {
 
     // MARK: - Content switcher
 
+    private var selectedOutfitItems: [ClothingItem] {
+        guard let id = selectedOutfitId,
+              let outfit = model.myOutfits.first(where: { $0.id == id }) else { return [] }
+        return model.items(for: outfit)
+    }
+
     @ViewBuilder
     private var content: some View {
         switch viewMode {
         case .shelves:
             shelvesView
         case .avatar:
-            ClosetAvatarView(items: model.allItems)
+            VStack(spacing: 0) {
+                if !model.myOutfits.isEmpty {
+                    outfitPicker
+                }
+                ClosetAvatarView(items: model.allItems, preloadedItems: selectedOutfitItems, onSave: {
+                    viewMode = .shelves
+                    selectedOutfitId = nil
+                })
+                    .id(selectedOutfitId?.uuidString ?? "custom")
+            }
         }
+    }
+
+    private var outfitPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                chipButton(label: "Custom", isSelected: selectedOutfitId == nil) {
+                    selectedOutfitId = nil
+                }
+                ForEach(model.myOutfits) { outfit in
+                    chipButton(label: outfit.occasion, isSelected: selectedOutfitId == outfit.id) {
+                        selectedOutfitId = outfit.id
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(FitsTheme.background)
+    }
+
+    private func chipButton(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.fitsCaption)
+                .foregroundStyle(isSelected ? .white : FitsTheme.primary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isSelected ? FitsTheme.accent : FitsTheme.surface)
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(FitsTheme.muted.opacity(0.4), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Shelves view

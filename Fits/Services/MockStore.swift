@@ -148,8 +148,11 @@ final class MockStore {
     }
 
     func itemsByIds(_ ids: [UUID]) -> [ClothingItem] {
-        let set = Set(ids)
-        return items.filter { set.contains($0.id) }
+        let map = Dictionary(uniqueKeysWithValues: items.compactMap { item -> (UUID, ClothingItem)? in
+            guard ids.contains(item.id) else { return nil }
+            return (item.id, item)
+        })
+        return ids.compactMap { map[$0] }
     }
 
     func addItem(_ item: ClothingItem, image: UIImage? = nil) {

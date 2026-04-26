@@ -117,17 +117,19 @@ struct OutfitBuilderView: View {
 
     private var publishButton: some View {
         Button {
-            Task {
-                await model.publish()
-                // Brief pause so the toast is visible before dismissing
-                try? await Task.sleep(for: .seconds(1.5))
+            guard !model.isPublishing else { return }
+            model.publish()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 dismiss()
             }
         } label: {
             HStack(spacing: 8) {
                 if model.isPublishing {
-                    ProgressView().tint(.white).scaleEffect(0.8)
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(0.8)
                 }
+
                 Text(model.isPublishing ? "Publishing…" : "Publish Outfit")
                     .font(.fitsBody.weight(.semibold))
                     .foregroundStyle(.white)
@@ -137,7 +139,7 @@ struct OutfitBuilderView: View {
             .background(model.canPublish ? FitsTheme.primary : FitsTheme.muted)
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-        .disabled(!model.canPublish)
+        .disabled(!model.canPublish || model.isPublishing)
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.canPublish)
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.isPublishing)
     }

@@ -14,12 +14,24 @@ final class ClosetModel {
         mockStore.myItems(wishlist: false)
     }
 
+    var myOutfits: [Outfit] {
+        mockStore.outfitsByUser(mockStore.currentUser.id)
+    }
+
+    var itemsByOutfitId: [UUID: [ClothingItem]] {
+        Dictionary(uniqueKeysWithValues: myOutfits.map { ($0.id, mockStore.itemsByIds($0.itemIds)) })
+    }
+
     var populatedCategories: [ItemCategory] {
         ItemCategory.allCases.filter { !items(for: $0).isEmpty }
     }
 
     func items(for category: ItemCategory) -> [ClothingItem] {
         allItems.filter { $0.category == category }
+    }
+
+    func items(for outfit: Outfit) -> [ClothingItem] {
+        itemsByOutfitId[outfit.id] ?? mockStore.itemsByIds(outfit.itemIds)
     }
 
     var isEmpty: Bool {

@@ -12,6 +12,7 @@ final class ProfileModel {
     var profile: Profile?
     var outfits: [Outfit] = []
     var recentItems: [ClothingItem] = []
+    var itemsByOutfitId: [UUID: [ClothingItem]] = [:]
     var isLoading = false
     var error: String?
 
@@ -37,9 +38,17 @@ final class ProfileModel {
         let allOutfits = mockStore.outfitsByUser(userId)
         outfits = allOutfits.filter { $0.published || $0.ownerId == mockStore.currentUser.id }
 
+        for outfit in outfits {
+            itemsByOutfitId[outfit.id] = mockStore.itemsByIds(outfit.itemIds)
+        }
+
         let items = mockStore.itemsForUser(userId)
         recentItems = Array(items.sorted { $0.createdAt > $1.createdAt }.prefix(12))
 
         isLoading = false
+    }
+
+    func items(for outfit: Outfit) -> [ClothingItem] {
+        itemsByOutfitId[outfit.id] ?? mockStore.itemsByIds(outfit.itemIds)
     }
 }

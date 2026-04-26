@@ -26,7 +26,7 @@ struct FeedView: View {
         }
         .onAppear { model.load() }
         .sheet(isPresented: $showTryOn) {
-            ClosetAvatarView(items: tryOnItems, preloadedItems: tryOnItems)
+            ClosetAvatarView(items: tryOnItems, preloadedItems: tryOnItems, onSave: { showTryOn = false })
         }
     }
 

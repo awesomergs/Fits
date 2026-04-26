@@ -13,9 +13,6 @@ struct RootView: View {
                     .background(Color.black.opacity(0.1))
             }
         }
-        .task {
-            await authService.checkAuthStatus()
-        }
     }
 }
 

@@ -6,10 +6,12 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @State private var model: ProfileModel   // ✅ FIXED
+    @State private var model: ProfileModel
+    @State private var tryOnItems: [ClothingItem] = []
+    @State private var showTryOn = false
 
     init(userId: UUID? = nil) {
-        _model = State(initialValue: ProfileModel(userId: userId)) // ✅ FIXED
+        _model = State(initialValue: ProfileModel(userId: userId))
     }
 
     private let threeCol = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
@@ -31,12 +33,15 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle(
-                model.profile?.handle.first.map { "@\($0)" } ?? "Profile"
+                model.profile.map { "@\($0.handle)" } ?? "Profile"
             )
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showTryOn) {
+                ClosetAvatarView(items: tryOnItems, preloadedItems: tryOnItems, onSave: { showTryOn = false })
+            }
         }
-        .task {
-            await model.load()
+        .onAppear {
+            model.load()
         }
     }
 
@@ -142,30 +147,36 @@ struct ProfileView: View {
     }
 
     private func outfitCell(_ outfit: Outfit) -> some View {
-        let coverItemId = outfit.itemIds.first
-        let coverItem = model.recentItems.first { $0.id == coverItemId }
+        let items = model.items(for: outfit)
+        let coverItem = items.first
 
-        return Color.clear
-            .aspectRatio(1, contentMode: .fill)
-            .overlay {
-                if let item = coverItem {
-                    ItemImageView(item: item, contentMode: .fill)
-                        .clipped()
-                } else {
-                    Rectangle().fill(FitsTheme.muted)
+        return Button {
+            tryOnItems = items
+            showTryOn = true
+        } label: {
+            Color.clear
+                .aspectRatio(1, contentMode: .fill)
+                .overlay {
+                    if let item = coverItem {
+                        ItemImageView(item: item, contentMode: .fill)
+                            .clipped()
+                    } else {
+                        Rectangle().fill(FitsTheme.muted)
+                    }
                 }
-            }
-            .overlay(alignment: .bottomLeading) {
-                Text(outfit.occasion)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 3)
-                    .background(.black.opacity(0.45))
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                    .padding(5)
-            }
-            .clipped()
+                .overlay(alignment: .bottomLeading) {
+                    Text(outfit.occasion)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.45))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                        .padding(5)
+                }
+                .clipped()
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Items section
