@@ -1,10 +1,13 @@
+//
+//  SignInView.swift
+//
+
 import SwiftUI
-import AuthenticationServices
 
 struct SignInView: View {
     @StateObject private var authService = AuthService.shared
     @State private var email = ""
-    @State private var showingMagicLinkPrompt = false
+    @State private var showingEmailPrompt = false
 
     var body: some View {
         ZStack {
@@ -26,34 +29,18 @@ struct SignInView: View {
 
                 Spacer()
 
-                VStack(spacing: 16) {
-                    SignInWithAppleButton(
-                        onRequest: { _ in },
-                        onCompletion: { result in
-                            handleAppleSignIn(result)
-                        }
-                    )
-                    .signInWithAppleButtonStyle(.black)
-                    .frame(height: 52)
-
-                    Button(action: { showingMagicLinkPrompt = true }) {
-                        HStack {
-                            Image(systemName: "envelope.fill")
-                            Text("Sign in with email")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(FitsTheme.primary)
-                        .foregroundStyle(.white)
-                        .cornerRadius(12)
+                Button {
+                    showingEmailPrompt = true
+                } label: {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                        Text("Sign in with email")
                     }
-                }
-
-                if let error = authService.errorMessage {
-                    Text(error)
-                        .font(.fitsCaption)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(FitsTheme.primary)
+                    .foregroundStyle(.white)
+                    .cornerRadius(12)
                 }
 
                 Spacer()
@@ -61,44 +48,32 @@ struct SignInView: View {
             .padding(24)
         }
         .alert(
-            "Sign in with email",
-            isPresented: $showingMagicLinkPrompt,
+            "Sign in",
+            isPresented: $showingEmailPrompt,
             actions: {
                 TextField("Email", text: $email)
-                Button("Send link") {
-                    Task {
-                        await authService.signInWithMagicLink(email: email)
-                        email = ""
-                    }
+
+                Button("Continue") {
+                    let enteredEmail = email
+                    showingEmailPrompt = false
+                    email = ""
+                    guard !enteredEmail.isEmpty else { return }
+                    dummySignIn(email: enteredEmail)
                 }
+
                 Button("Cancel", role: .cancel) {}
             }
         )
     }
 
-    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
-        switch result {
-        case .success(let authorization):
-            guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-                authService.errorMessage = "Invalid Apple ID credential"
-                return
-            }
-
-            guard let idTokenData = appleIDCredential.identityToken,
-                  let idToken = String(data: idTokenData, encoding: .utf8) else {
-                authService.errorMessage = "Failed to get ID token"
-                return
-            }
-
-            let nonce = UUID().uuidString
-
-            Task {
-                await authService.signInWithApple(idToken: idToken, nonce: nonce)
-            }
-
-        case .failure(let error):
-            authService.errorMessage = error.localizedDescription
-        }
+    private func dummySignIn(email: String) {
+        let handle = email.components(separatedBy: "@").first ?? "user"
+        authService.currentUser = Profile(
+            id: UUID(),
+            username: handle,
+            handle: handle
+        )
+        authService.isAuthenticated = true
     }
 }
 
