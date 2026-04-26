@@ -9,63 +9,49 @@ struct FeedView: View {
     @State private var model = FeedModel()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                FitsTheme.background.ignoresSafeArea()
-                content
-            }
-            .navigationTitle("Fits")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .task { model.load() }
-    }
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-    // MARK: - Content
-
-    @ViewBuilder
-    private var content: some View {
-        if model.isLoading {
-            ProgressView().tint(FitsTheme.primary)
-        } else if model.deck.isEmpty {
-            emptyState
-        } else {
-            cardStack
-        }
-    }
-
-    // MARK: - Card stack
-
-    private var cardStack: some View {
-        let shown = Array(model.deck.prefix(3))
-        return ZStack {
-            ForEach(Array(shown.enumerated()), id: \.element.id) { idx, outfit in
-                FeedCardView(
-                    outfit: outfit,
-                    items: model.items(for: outfit),
-                    profile: model.profile(for: outfit),
-                    isTopCard: idx == 0,
-                    onLike: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            model.react(to: outfit, kind: .like)
-                        }
-                    },
-                    onDislike: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            model.react(to: outfit, kind: .dislike)
-                        }
-                    },
-                    onSteal: {
-                        model.steal(outfit)
-                    }
-                )
-                .scaleEffect(1.0 - CGFloat(idx) * 0.04)
-                .offset(y: CGFloat(idx) * 10)
-                .zIndex(Double(shown.count - idx))
-                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: model.deck.count)
+            switch true {
+            case model.isLoading:
+                ProgressView().tint(.white)
+            case model.deck.isEmpty && !model.isLoading:
+                emptyState
+            default:
+                pagingFeed
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .ignoresSafeArea()
+        .task { await model.load() }
+    }
+
+    // MARK: - Vertical paging feed
+
+    private var pagingFeed: some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: 0) {
+                ForEach(model.deck) { outfit in
+                    FeedCardView(
+                        outfit: outfit,
+                        items: model.items(for: outfit),
+                        profile: model.profile(for: outfit),
+                        onLike: {
+                            Task { await model.react(to: outfit, kind: .like) }
+                        },
+                        onDislike: {
+                            Task { await model.react(to: outfit, kind: .dislike) }
+                        },
+                        onSteal: {
+                            Task { await model.steal(outfit) }
+                        }
+                    )
+                    .containerRelativeFrame([.horizontal, .vertical])
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollIndicators(.hidden)
     }
 
     // MARK: - Empty state
@@ -74,13 +60,13 @@ struct FeedView: View {
         VStack(spacing: 16) {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 52, weight: .light))
-                .foregroundStyle(FitsTheme.muted)
+                .foregroundStyle(.white.opacity(0.4))
             Text("You're all caught up")
                 .font(.fitsHeadline)
-                .foregroundStyle(FitsTheme.primary)
-            Text("Follow some people to see their fits")
+                .foregroundStyle(.white)
+            Text("Follow people to see their fits")
                 .font(.fitsCaption)
-                .foregroundStyle(FitsTheme.primary.opacity(0.6))
+                .foregroundStyle(.white.opacity(0.6))
         }
     }
 }

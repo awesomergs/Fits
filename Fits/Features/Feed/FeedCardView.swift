@@ -2,6 +2,8 @@
 //  FeedCardView.swift
 //  Fits
 //
+//  Full-screen TikTok layout + horizontal Tinder swipe for like/dislike.
+//
 
 import SwiftUI
 
@@ -9,253 +11,321 @@ struct FeedCardView: View {
     let outfit: Outfit
     let items: [ClothingItem]
     let profile: Profile?
-    var isTopCard: Bool = false
     var onLike: (() -> Void)? = nil
     var onDislike: (() -> Void)? = nil
     var onSteal: (() -> Void)? = nil
 
-    @State private var dragOffset: CGSize = .zero
-    @State private var isDismissing = false
+    // Horizontal drag state for like/dislike
+    @GestureState private var dragX: CGFloat = 0
+    @State private var committed: Bool = false
+    @State private var commitDirection: CGFloat = 0
+    @State private var isStolen: Bool = false
     @State private var stealToastMessage: String? = nil
+    @State private var cardOffset: CGFloat = 0
 
-    private let swipeThreshold: CGFloat = 100
-
-    private var isStolen: Bool { MockStore.shared.hasStolen(outfit.id) }
+    private let threshold: CGFloat = 90
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            cardContent
-                .rotationEffect(.degrees(Double(dragOffset.width) / 25))
-                .offset(dragOffset)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            guard isTopCard, !isDismissing else { return }
-                            dragOffset = value.translation
-                        }
-                        .onEnded { value in
-                            guard isTopCard, !isDismissing else { return }
-                            let width = value.translation.width
-                            if abs(width) > swipeThreshold {
-                                flyOff(direction: width > 0 ? 1 : -1)
-                            } else {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                    dragOffset = .zero
-                                }
-                            }
-                        }
-                )
+        ZStack {
+            // Background: blurred first clothing item photo
+            background
 
-            // Steal toast floats outside the card's clip shape
-            if let message = stealToastMessage {
-                ToastView(message: message)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Main outfit content
+            HStack(alignment: .bottom, spacing: 0) {
+                // Left: outfit images + caption
+                outfitContent
+
+                // Right: action sidebar (TikTok style)
+                actionSidebar
             }
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: stealToastMessage != nil)
-    }
 
-    // MARK: - Card content
+            // Swipe stamps overlay
+            stampOverlay
 
-    private var cardContent: some View {
-        VStack(spacing: 0) {
-            profileHeader
-            itemGrid
-            footer
-        }
-        .background(FitsTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
-        .overlay { stampOverlay }
-        .overlay(alignment: .topTrailing) { stolenBadge }
-    }
-
-    // MARK: - Profile header
-
-    private var profileHeader: some View {
-        HStack(spacing: 10) {
-            AsyncImage(url: URL(string: profile?.avatarUrl ?? "")) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                default:
-                    Circle().fill(FitsTheme.muted)
+            // Steal toast
+            if let msg = stealToastMessage {
+                VStack {
+                    ToastView(message: msg)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    Spacer()
                 }
+                .padding(.top, 60)
+                .animation(.spring(response: 0.3, dampingFraction: 0.75), value: stealToastMessage != nil)
             }
-            .frame(width: 38, height: 38)
-            .clipShape(Circle())
+        }
+        .offset(x: committed ? commitDirection * 600 : dragX)
+        .rotationEffect(.degrees(Double(committed ? commitDirection * 12 : dragX / 30)))
+        .animation(
+            committed ? .easeOut(duration: 0.35) : .spring(response: 0.25, dampingFraction: 0.85),
+            value: committed
+        )
+        .gesture(horizontalSwipeGesture)
+    }
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(profile?.username ?? "Unknown")
-                    .font(.fitsCaption.weight(.semibold))
-                    .foregroundStyle(FitsTheme.primary)
-                Text("@\(profile?.handle ?? "")")
-                    .font(.fitsCaption)
-                    .foregroundStyle(FitsTheme.primary.opacity(0.5))
+    // MARK: - Background
+
+    private var background: some View {
+        ZStack {
+            Color.black
+
+            if let first = items.first {
+                ItemImageView(item: first, contentMode: .fill)
+                    .blur(radius: 40)
+                    .opacity(0.5)
+                    .clipped()
             }
+        }
+        .ignoresSafeArea()
+    }
 
+    // MARK: - Outfit content
+
+    private var outfitContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Spacer()
 
-            Text(outfit.occasion)
-                .font(.fitsCaption)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(FitsTheme.highlight)
-                .foregroundStyle(FitsTheme.primary)
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
+            // Items grid
+            itemsGrid
 
-    // MARK: - Item scroll
+            // Profile info + caption
+            VStack(alignment: .leading, spacing: 6) {
+                profileRow
 
-    private var itemGrid: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(items) { item in
-                    ItemImageView(item: item, contentMode: .fill)
-                        .frame(width: 120, height: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                if let caption = outfit.caption, !caption.isEmpty {
+                    Text(caption)
+                        .font(.fitsBody)
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 4, y: 2)
                 }
+
+                Text(outfit.occasion)
+                    .font(.fitsCaption)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(.white.opacity(0.15))
+                    .clipShape(Capsule())
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.bottom, 100)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+    }
+
+    private var itemsGrid: some View {
+        let cols = min(items.count, 2)
+        let rows = cols == 0 ? 0 : Int(ceil(Double(min(items.count, 4)) / Double(cols)))
+        let gridItems = Array(items.prefix(4))
+
+        return Group {
+            if gridItems.isEmpty {
+                EmptyView()
+            } else if gridItems.count == 1 {
+                ItemImageView(item: gridItems[0], contentMode: .fill)
+                    .frame(width: 200, height: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.leading, 16)
+            } else {
+                LazyVGrid(
+                    columns: [GridItem(.fixed(120)), GridItem(.fixed(120))],
+                    spacing: 8
+                ) {
+                    ForEach(gridItems) { item in
+                        ItemImageView(item: item, contentMode: .fill)
+                            .frame(width: 120, height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .padding(.leading, 16)
+            }
         }
     }
 
-    // MARK: - Footer
-
-    @ViewBuilder
-    private var footer: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let caption = outfit.caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.fitsCaption)
-                    .foregroundStyle(FitsTheme.primary)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
+    private var profileRow: some View {
+        HStack(spacing: 8) {
+            AsyncImage(url: URL(string: profile?.avatarUrl ?? "")) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                default: Circle().fill(.white.opacity(0.3))
+                }
             }
-            actionButtons
-        }
-    }
+            .frame(width: 34, height: 34)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 1))
 
-    private var actionButtons: some View {
-        HStack {
-            Spacer()
-
-            // Dislike
-            Button {
-                guard !isDismissing else { return }
-                flyOff(direction: -1)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(.red.opacity(0.75))
-            }
-
-            Spacer()
-
-            // Steal this fit
-            Button {
-                guard !isStolen else { return }
-                onSteal?()
-                triggerStealToast()
-            } label: {
-                Image(systemName: "tshirt.fill")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(isStolen ? FitsTheme.accent : FitsTheme.primary)
-            }
-
-            Spacer()
-
-            // Like
-            Button {
-                guard !isDismissing else { return }
-                flyOff(direction: 1)
-            } label: {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(FitsTheme.accent)
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 14)
-        .disabled(!isTopCard)
-    }
-
-    // MARK: - Stolen badge
-
-    @ViewBuilder
-    private var stolenBadge: some View {
-        if isStolen {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold))
-                Text("Stolen")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(profile?.username ?? "User")
                     .font(.fitsCaption.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("@\(profile?.handle ?? "")")
+                    .font(.micro)
+                    .foregroundStyle(.white.opacity(0.7))
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(FitsTheme.primary)
-            .clipShape(Capsule())
-            .padding(12)
         }
+        .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
     }
 
-    // MARK: - Stamp overlay
+    // MARK: - Action sidebar (TikTok right panel)
+
+    private var actionSidebar: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            // Profile avatar (larger)
+            AsyncImage(url: URL(string: profile?.avatarUrl ?? "")) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                default: Circle().fill(.white.opacity(0.3))
+                }
+            }
+            .frame(width: 48, height: 48)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+
+            // Like button
+            actionButton(
+                systemImage: "heart.fill",
+                label: "Like",
+                color: .white,
+                action: {
+                    guard !committed else { return }
+                    triggerCommit(direction: 1)
+                }
+            )
+
+            // Steal button
+            actionButton(
+                systemImage: isStolen ? "checkmark.circle.fill" : "tshirt.fill",
+                label: isStolen ? "Stolen" : "Steal",
+                color: isStolen ? FitsTheme.accent : .white,
+                action: {
+                    guard !isStolen else { return }
+                    isStolen = true
+                    onSteal?()
+                    showStealToast()
+                }
+            )
+
+            // Dislike button
+            actionButton(
+                systemImage: "xmark.circle.fill",
+                label: "Pass",
+                color: .white.opacity(0.7),
+                action: {
+                    guard !committed else { return }
+                    triggerCommit(direction: -1)
+                }
+            )
+        }
+        .padding(.trailing, 16)
+        .padding(.bottom, 100)
+        .frame(width: 80)
+    }
+
+    private func actionButton(
+        systemImage: String,
+        label: String,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(color)
+                    .shadow(color: .black.opacity(0.4), radius: 4)
+                Text(label)
+                    .font(.micro)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Swipe stamps
 
     private var stampOverlay: some View {
-        ZStack {
-            stampLabel("LIKE", color: .green, rotation: -15, alignment: .topLeading)
-                .opacity(dragOffset.width > 20 ? min(Double(dragOffset.width - 20) / 60, 1) : 0)
+        let likeOpacity = dragX > 20 ? min(Double(dragX - 20) / 60, 1.0) : 0
+        let nopeOpacity = dragX < -20 ? min(Double(-dragX - 20) / 60, 1.0) : 0
 
-            stampLabel("NOPE", color: .red, rotation: 15, alignment: .topTrailing)
-                .opacity(dragOffset.width < -20 ? min(Double(-dragOffset.width - 20) / 60, 1) : 0)
+        return ZStack {
+            // LIKE stamp
+            Text("LIKE")
+                .font(.system(size: 48, weight: .black))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(.green, lineWidth: 4))
+                .rotationEffect(.degrees(-15))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.top, 80)
+                .padding(.leading, 20)
+                .opacity(likeOpacity)
+
+            // NOPE stamp
+            Text("NOPE")
+                .font(.system(size: 48, weight: .black))
+                .foregroundStyle(.red)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(.red, lineWidth: 4))
+                .rotationEffect(.degrees(15))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.top, 80)
+                .padding(.trailing, 20)
+                .opacity(nopeOpacity)
         }
     }
 
-    private func stampLabel(
-        _ text: String,
-        color: Color,
-        rotation: Double,
-        alignment: Alignment
-    ) -> some View {
-        Text(text)
-            .font(.system(size: 36, weight: .black))
-            .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .overlay(RoundedRectangle(cornerRadius: 4).stroke(color, lineWidth: 3))
-            .rotationEffect(.degrees(rotation))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
-            .padding(20)
+    // MARK: - Gestures
+
+    private var horizontalSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($dragX) { value, state, _ in
+                // Only track if primarily horizontal
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                state = value.translation.width
+            }
+            .onEnded { value in
+                let dx = value.translation.width
+                guard abs(dx) > abs(value.translation.height) else { return }
+
+                if dx > threshold {
+                    triggerCommit(direction: 1)
+                } else if dx < -threshold {
+                    triggerCommit(direction: -1)
+                }
+            }
     }
 
-    // MARK: - Actions
+    private func triggerCommit(direction: CGFloat) {
+        guard !committed else { return }
+        committed = true
+        commitDirection = direction
 
-    private func flyOff(direction: CGFloat) {
-        isDismissing = true
-        withAnimation(.easeOut(duration: 0.3)) {
-            dragOffset = CGSize(width: direction * 1200, height: 100)
-        } completion: {
-            if direction > 0 { onLike?() } else { onDislike?() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            if direction > 0 {
+                onLike?()
+            } else {
+                onDislike?()
+            }
         }
     }
 
-    private func triggerStealToast() {
+    private func showStealToast() {
         let count = items.count
-        let noun = count == 1 ? "item" : "items"
-        stealToastMessage = "\(count) \(noun) added to your wishlist"
+        stealToastMessage = "\(count) \(count == 1 ? "item" : "items") added to wishlist"
         Task {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(2.5))
             stealToastMessage = nil
         }
     }
+}
+
+// MARK: - micro font
+
+private extension Font {
+    static var micro: Font { .system(size: 11, weight: .medium) }
 }
 
 #Preview {
@@ -263,9 +333,7 @@ struct FeedCardView: View {
         id: UUID(),
         username: "Aria Chen",
         handle: "aria",
-        avatarUrl: "https://i.pravatar.cc/150?img=47",
-        bio: nil,
-        createdAt: .now
+        avatarUrl: "https://i.pravatar.cc/150?img=47"
     )
     let outfit = Outfit(
         ownerId: profile.id,
@@ -274,7 +342,6 @@ struct FeedCardView: View {
         caption: "weekend fit 🖤",
         published: true
     )
-    return FeedCardView(outfit: outfit, items: [], profile: profile, isTopCard: true)
-        .padding(20)
-        .background(FitsTheme.background)
+    return FeedCardView(outfit: outfit, items: [], profile: profile)
+        .background(Color.black)
 }

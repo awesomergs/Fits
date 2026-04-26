@@ -30,31 +30,22 @@ struct ToastView: View {
 
 // MARK: - Item image
 
-/// Checks the MockStore image cache first (for locally tagged items),
-/// falls back to AsyncImage for seeded/network items.
-/// Swap out the cache check when wiring Supabase.
 struct ItemImageView: View {
     let item: ClothingItem
     var contentMode: ContentMode = .fill
 
     var body: some View {
-        if let cached = MockStore.shared.imageCache[item.id] {
-            Image(uiImage: cached)
-                .resizable()
-                .aspectRatio(contentMode: contentMode)
-        } else {
-            AsyncImage(url: URL(string: item.imageUrl)) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().aspectRatio(contentMode: contentMode)
-                case .failure:
-                    placeholderRect
-                default:
-                    placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
-                }
+        AsyncImage(url: URL(string: item.imageUrl)) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().aspectRatio(contentMode: contentMode)
+            case .failure:
+                placeholderRect
+            default:
+                placeholderRect.overlay(ProgressView().tint(FitsTheme.primary))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var placeholderRect: some View {

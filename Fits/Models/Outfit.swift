@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct Outfit: Identifiable, Hashable {
+struct Outfit: Codable, Identifiable, Hashable {
     let id: UUID
     let ownerId: UUID
     let occasion: String
@@ -13,6 +13,13 @@ struct Outfit: Identifiable, Hashable {
     let caption: String?
     let published: Bool
     let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, occasion, caption, published
+        case ownerId = "owner_id"
+        case itemIds = "item_ids"
+        case createdAt = "created_at"
+    }
 
     init(
         id: UUID = UUID(),

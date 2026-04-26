@@ -2,16 +2,22 @@
 //  FitsApp.swift
 //  Fits
 //
-//  Created by Rohan George on 4/25/26.
-//
 
 import SwiftUI
 
 @main
 struct FitsApp: App {
+    @StateObject private var authService = AuthService.shared
+
     var body: some Scene {
         WindowGroup {
-            TabBarView()
+            if authService.isAuthenticated {
+                RootView()
+                    .environmentObject(authService)
+            } else {
+                SignInView()
+                    .environmentObject(authService)
+            }
         }
     }
 }

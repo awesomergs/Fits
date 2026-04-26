@@ -47,6 +47,7 @@ struct OutfitBuilderView: View {
                 }
             }
         }
+        .task { await model.load() }
     }
 
     // MARK: - Occasion picker

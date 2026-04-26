@@ -8,6 +8,12 @@ import SwiftUI
 struct ClosetView: View {
     @State private var model = ClosetModel()
     @State private var showingBuilder = false
+    @State private var viewMode: ClosetViewMode = .shelves
+
+    enum ClosetViewMode: String, CaseIterable {
+        case shelves = "Shelves"
+        case avatar  = "Try On"
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,18 +23,22 @@ struct ClosetView: View {
                 if model.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 28) {
-                            ForEach(model.populatedCategories, id: \.self) { category in
-                                categorySection(for: category)
-                            }
-                        }
-                        .padding(.vertical, 20)
-                    }
+                    content
                 }
             }
             .navigationTitle("Closet")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Picker("View", selection: $viewMode) {
+                        ForEach(ClosetViewMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                }
+
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingBuilder = true
@@ -44,9 +54,33 @@ struct ClosetView: View {
                 OutfitBuilderView()
             }
         }
+        .task { await model.load() }
     }
 
-    // MARK: - Category section
+    // MARK: - Content switcher
+
+    @ViewBuilder
+    private var content: some View {
+        switch viewMode {
+        case .shelves:
+            shelvesView
+        case .avatar:
+            ClosetAvatarView(items: model.allItems)
+        }
+    }
+
+    // MARK: - Shelves view
+
+    private var shelvesView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                ForEach(model.populatedCategories, id: \.self) { category in
+                    categorySection(for: category)
+                }
+            }
+            .padding(.vertical, 20)
+        }
+    }
 
     private func categorySection(for category: ItemCategory) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -78,7 +112,7 @@ struct ClosetView: View {
                 .font(.fitsHeadline)
                 .foregroundStyle(FitsTheme.primary)
 
-            Text("Tap  +  to tag your first item")
+            Text("Tap + to tag your first item")
                 .font(.fitsCaption)
                 .foregroundStyle(FitsTheme.primary.opacity(0.6))
         }

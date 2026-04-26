@@ -42,7 +42,6 @@ struct FindView: View {
                                 Text(profile.username)
                                     .font(.headline)
                                 
-                                // ✅ FIX: UUID → String
                                 Text(profile.id.uuidString)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -115,7 +114,9 @@ struct FindItemCard: View {
                     .cornerRadius(12)
                 
                 Button {
-                    model.addToWishlist(item)
+                    Task {
+                        await model.addToWishlist(item) // ✅ FIXED
+                    }
                 } label: {
                     Image(systemName: model.isInWishlist(item) ? "heart.fill" : "heart")
                         .padding(8)

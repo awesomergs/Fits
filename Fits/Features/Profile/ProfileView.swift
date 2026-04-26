@@ -6,10 +6,10 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @State private var model: ProfileModel
+    @State private var model: ProfileModel   // ✅ FIXED
 
-    init(userId: UUID = MockStore.shared.currentUser.id) {
-        _model = State(initialValue: ProfileModel(userId: userId))
+    init(userId: UUID? = nil) {
+        _model = State(initialValue: ProfileModel(userId: userId)) // ✅ FIXED
     }
 
     private let threeCol = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
@@ -18,6 +18,7 @@ struct ProfileView: View {
         NavigationStack {
             ZStack {
                 FitsTheme.background.ignoresSafeArea()
+
                 ScrollView {
                     VStack(spacing: 0) {
                         profileHeader
@@ -25,14 +26,17 @@ struct ProfileView: View {
                         outfitSection
                         Divider().padding(.vertical, 20)
                         itemsSection
-                        Divider().padding(.vertical, 20)
-                        favoritesPlaceholder
                             .padding(.bottom, 32)
                     }
                 }
             }
-            .navigationTitle(model.profile.map { "@\($0.handle)" } ?? "Profile")
+            .navigationTitle(
+                model.profile?.handle.first.map { "@\($0)" } ?? "Profile"
+            )
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .task {
+            await model.load()
         }
     }
 
@@ -40,12 +44,15 @@ struct ProfileView: View {
 
     private var profileHeader: some View {
         VStack(spacing: 12) {
-            AsyncImage(url: URL(string: model.profile?.avatarUrl ?? "")) { phase in
+            AsyncImage(url: model.profile?.avatarUrl.flatMap(URL.init)) { phase in
                 switch phase {
                 case .success(let img):
-                    img.resizable().scaledToFill()
+                    img
+                        .resizable()
+                        .scaledToFill()
                 default:
-                    Circle().fill(FitsTheme.muted)
+                    Circle()
+                        .fill(FitsTheme.muted)
                         .overlay(
                             Image(systemName: "person.fill")
                                 .foregroundStyle(FitsTheme.primary.opacity(0.4))
@@ -62,9 +69,11 @@ struct ProfileView: View {
                     .font(.fitsHeadline)
                     .foregroundStyle(FitsTheme.primary)
 
-                Text("@\(model.profile?.handle ?? "")")
-                    .font(.fitsCaption)
-                    .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                if let handle = model.profile?.handle {
+                    Text("@\(handle)")
+                        .font(.fitsCaption)
+                        .foregroundStyle(FitsTheme.primary.opacity(0.5))
+                }
 
                 if let bio = model.profile?.bio {
                     Text(bio)
@@ -83,24 +92,13 @@ struct ProfileView: View {
 
     private var statsRow: some View {
         HStack(spacing: 0) {
-            statCell(
-                value: formatted(model.profile?.followerCount ?? 0),
-                label: "Followers"
-            )
+            statCell(value: "\(model.outfits.count)", label: "Outfits")
+
             Rectangle()
                 .fill(FitsTheme.muted)
                 .frame(width: 1, height: 32)
-            statCell(
-                value: formatted(model.profile?.followingCount ?? 0),
-                label: "Following"
-            )
-            Rectangle()
-                .fill(FitsTheme.muted)
-                .frame(width: 1, height: 32)
-            statCell(
-                value: "\(model.outfits.count)",
-                label: "Outfits"
-            )
+
+            statCell(value: "\(model.recentItems.count)", label: "Items")
         }
         .padding(.top, 8)
         .padding(.horizontal, 20)
@@ -111,15 +109,12 @@ struct ProfileView: View {
             Text(value)
                 .font(.fitsHeadline)
                 .foregroundStyle(FitsTheme.primary)
+
             Text(label)
                 .font(.fitsCaption)
                 .foregroundStyle(FitsTheme.primary.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private func formatted(_ n: Int) -> String {
-        n >= 1000 ? String(format: "%.1fk", Double(n) / 1000) : "\(n)"
     }
 
     // MARK: - Outfits section
@@ -128,8 +123,14 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Outfits")
 
-            if model.outfits.isEmpty {
+            if model.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+
+            } else if model.outfits.isEmpty {
                 emptyLabel("No outfits published yet")
+
             } else {
                 LazyVGrid(columns: threeCol, spacing: 2) {
                     ForEach(model.outfits) { outfit in
@@ -141,13 +142,15 @@ struct ProfileView: View {
     }
 
     private func outfitCell(_ outfit: Outfit) -> some View {
-        let cover = MockStore.shared.itemsByIds(outfit.itemIds).first
+        let coverItemId = outfit.itemIds.first
+        let coverItem = model.recentItems.first { $0.id == coverItemId }
+
         return Color.clear
             .aspectRatio(1, contentMode: .fill)
             .overlay {
-                if let item = cover {
+                if let item = coverItem {
                     ItemImageView(item: item, contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 } else {
                     Rectangle().fill(FitsTheme.muted)
                 }
@@ -173,6 +176,7 @@ struct ProfileView: View {
 
             if model.recentItems.isEmpty {
                 emptyLabel("Tag some items to see them here")
+
             } else {
                 LazyVGrid(columns: threeCol, spacing: 2) {
                     ForEach(model.recentItems) { item in
@@ -180,7 +184,7 @@ struct ProfileView: View {
                             .aspectRatio(1, contentMode: .fill)
                             .overlay {
                                 ItemImageView(item: item, contentMode: .fill)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
                             }
                             .overlay(alignment: .topTrailing) {
                                 if item.isWishlist {
@@ -197,16 +201,7 @@ struct ProfileView: View {
         }
     }
 
-    // MARK: - Favorites placeholder
-
-    private var favoritesPlaceholder: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Favorites")
-            emptyLabel("Coming soon")
-        }
-    }
-
-    // MARK: - Shared helpers
+    // MARK: - Helpers
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)

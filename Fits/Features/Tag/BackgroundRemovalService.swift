@@ -2,6 +2,10 @@
 //  BackgroundRemovalService.swift
 //  Fits
 //
+//  Two-pass cutout:
+//    1. VisionKit removes the background (keeps person + clothes).
+//    2. Pixel-level skin-tone removal strips exposed skin, leaving only the garment.
+//
 
 import UIKit
 import Vision
@@ -10,14 +14,18 @@ import CoreImage
 @available(iOS 17, *)
 enum BackgroundRemovalService {
 
-    /// Returns a background-removed cutout, or the original image on any failure.
+    /// Returns a clothes-only cutout, or the original image on any failure.
     /// Never throws — the Tag flow must never be blocked by this step.
     nonisolated static func cutout(from image: UIImage) async -> UIImage {
-        do { return try performCutout(image) }
-        catch { return image }
+        // Step 1: remove background with VisionKit
+        guard let fgCutout = try? performForegroundCutout(image) else { return image }
+        // Step 2: remove exposed skin, leaving clothing
+        return removeSkinTones(from: fgCutout) ?? fgCutout
     }
 
-    nonisolated private static func performCutout(_ image: UIImage) throws -> UIImage {
+    // MARK: - Step 1: VisionKit foreground extraction
+
+    nonisolated private static func performForegroundCutout(_ image: UIImage) throws -> UIImage {
         guard let cg = image.cgImage else { return image }
 
         let request = VNGenerateForegroundInstanceMaskRequest()
@@ -35,5 +43,117 @@ enum BackgroundRemovalService {
         let ci = CIImage(cvPixelBuffer: masked)
         guard let out = CIContext().createCGImage(ci, from: ci.extent) else { return image }
         return UIImage(cgImage: out)
+    }
+
+    // MARK: - Step 2: Skin-tone removal
+
+    /// Scans each pixel in the foreground cutout. Pixels that fall within the
+    /// skin-tone HSV range are made transparent. Clothing pixels survive.
+    nonisolated private static func removeSkinTones(from image: UIImage) -> UIImage? {
+        guard let cgImage = image.cgImage else { return nil }
+
+        let width  = cgImage.width
+        let height = cgImage.height
+        let bytesPerPixel = 4
+        let bytesPerRow   = width * bytesPerPixel
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        guard let data = context.data else { return nil }
+        let buf = data.bindMemory(to: UInt8.self, capacity: width * height * bytesPerPixel)
+
+        // Dilation pass: for every skin pixel we also blank its neighbours to
+        // avoid leaving a faint skin-coloured halo around the clothing edges.
+        var skinMask = [Bool](repeating: false, count: width * height)
+
+        for i in 0 ..< width * height {
+            let a = buf[i * 4 + 3]
+            guard a > 10 else { continue }  // skip transparent pixels
+
+            let r = Float(buf[i * 4 + 0]) / 255
+            let g = Float(buf[i * 4 + 1]) / 255
+            let b = Float(buf[i * 4 + 2]) / 255
+
+            if isSkinTone(r: r, g: g, b: b) {
+                skinMask[i] = true
+            }
+        }
+
+        // Small dilation: grow skin mask by 1 pixel to hide halo edges
+        var dilated = skinMask
+        for row in 1 ..< (height - 1) {
+            for col in 1 ..< (width - 1) {
+                if skinMask[row * width + col] {
+                    dilated[(row - 1) * width + col]     = true
+                    dilated[(row + 1) * width + col]     = true
+                    dilated[row * width + (col - 1)]     = true
+                    dilated[row * width + (col + 1)]     = true
+                }
+            }
+        }
+
+        // Apply mask
+        for i in 0 ..< width * height {
+            if dilated[i] {
+                buf[i * 4 + 3] = 0
+            }
+        }
+
+        guard let result = context.makeImage() else { return nil }
+        return UIImage(cgImage: result, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    // MARK: - Skin tone detection in HSV space
+
+    /// Returns true when the RGB pixel falls inside the human skin-tone range.
+    /// Works for a wide range of skin tones (pale → deep brown).
+    private static func isSkinTone(r: Float, g: Float, b: Float) -> Bool {
+        let (h, s, v) = rgbToHSV(r: r, g: g, b: b)
+
+        // Hue band: 0–50° (warm reds / oranges / yellows) and 330–360° (pinkish reds)
+        // Both map to flesh tones across the full diversity of human skin.
+        let inHueBand = h <= 0.139 || h >= 0.917
+
+        // Saturation: not too grey (washed out), not too vivid (e.g. bright red clothing)
+        let inSatBand = s >= 0.08 && s <= 0.82
+
+        // Value: not black, not blown-out white
+        let inValBand = v >= 0.18 && v <= 0.97
+
+        return inHueBand && inSatBand && inValBand
+    }
+
+    private static func rgbToHSV(r: Float, g: Float, b: Float) -> (h: Float, s: Float, v: Float) {
+        let maxC = max(r, g, b)
+        let minC = min(r, g, b)
+        let diff = maxC - minC
+
+        let v = maxC
+        let s = maxC < 1e-6 ? 0 : diff / maxC
+
+        var h: Float = 0
+        if diff > 1e-6 {
+            if maxC == r {
+                h = (g - b) / diff
+            } else if maxC == g {
+                h = 2 + (b - r) / diff
+            } else {
+                h = 4 + (r - g) / diff
+            }
+            h /= 6
+            if h < 0 { h += 1 }
+        }
+
+        return (h, s, v)
     }
 }
